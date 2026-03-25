@@ -1,0 +1,11 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Playground",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/GreenPng.Playground/GreenPng.Playground.csproj"
+        }
+    ]
+}

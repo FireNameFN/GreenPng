@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="GreenBuf/GreenBuf.csproj" />
+  <Project Path="GreenPng.Benchmarks/GreenPng.Benchmarks.csproj" />
+  <Project Path="GreenPng.Playground/GreenPng.Playground.csproj" />
+  <Project Path="GreenPng.Testing/GreenPng.Testing.csproj" />
+  <Project Path="GreenPng.Tests/GreenPng.Tests.csproj" />
+  <Project Path="GreenPng/GreenPng.csproj" />
+</Solution>
