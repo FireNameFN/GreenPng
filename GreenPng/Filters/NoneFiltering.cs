@@ -9,7 +9,7 @@ public static class NoneFiltering {
 
         int offset = 0;
 
-        for(; i < filteredScanline.Length - 31; i += 30) {
+        for(; i < filteredScanline.Length - 31; i += 24) {
             Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
 
             Vector256<byte> scanlineVector = Vector256.ShuffleNative(filteredVector, Filtering.Shuffle) | Filtering.MaskAlpha;

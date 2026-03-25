@@ -9,14 +9,14 @@ public static class SubFiltering {
 
         int offset = 0;
 
-        Vector256<byte> prevScanlineVector = Vector256.Create(0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        Vector256<byte> subScanlineVector = default;
 
         for(; i < filteredScanline.Length - 31; i += 24) {
             Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
 
-            Vector256<byte> scanlineVector = Vector256.ShuffleNative(filteredVector, Filtering.Shuffle) & Filtering.MaskColor;
+            Vector256<byte> scanlineVector = Vector256.ShuffleNative(filteredVector, Filtering.Shuffle);
 
-            scanlineVector += prevScanlineVector;
+            scanlineVector += subScanlineVector;
 
             for(int j = 0; j < 3; j++) {
                 Vector256<byte> shift = Filtering.ShiftArray[j];
@@ -25,7 +25,9 @@ public static class SubFiltering {
                 scanlineVector += Vector256.ShuffleNative(scanlineVector, shift) & mask;
             }
 
-            prevScanlineVector = Vector256.ShuffleNative(scanlineVector, Filtering.LastShift) & Filtering.LastShiftMask;
+            scanlineVector |= Filtering.MaskAlpha;
+
+            subScanlineVector = Vector256.ShuffleNative(scanlineVector, Filtering.LastShift) & Filtering.LastShiftMask;
 
             scanlineVector.CopyTo(scanline[offset..]);
 
@@ -37,6 +39,10 @@ public static class SubFiltering {
             scanline[1] = filteredScanline[1];
             scanline[2] = filteredScanline[0];
             scanline[3] = 0xFF;
+
+            i = 3;
+
+            offset = 4;
         }
 
         for(; i < filteredScanline.Length; i += 3) {
@@ -52,14 +58,14 @@ public static class SubFiltering {
     public static void FilterTruecolorAlpha(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
         int i = 0;
 
-        Vector256<byte> prevScanlineVector = default;
+        Vector256<byte> subScanlineVector = default;
 
         for(; i < filteredScanline.Length - 31; i += 32) {
             Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
 
             Vector256<byte> scanlineVector = Vector256.ShuffleNative(filteredVector, Filtering.ShuffleAlpha);
 
-            scanlineVector += prevScanlineVector;
+            scanlineVector += subScanlineVector;
 
             for(int j = 0; j < 3; j++) {
                 Vector256<byte> shift = Filtering.ShiftArray[j];
@@ -68,7 +74,7 @@ public static class SubFiltering {
                 scanlineVector += Vector256.ShuffleNative(scanlineVector, shift) & mask;
             }
 
-            prevScanlineVector = Vector256.ShuffleNative(scanlineVector, Filtering.LastShift) & Filtering.LastShiftMask;
+            subScanlineVector = Vector256.ShuffleNative(scanlineVector, Filtering.LastShift) & Filtering.LastShiftMask;
 
             scanlineVector.CopyTo(scanline[i..]);
         }

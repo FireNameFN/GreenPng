@@ -204,6 +204,7 @@ public static class PngDecoder {
     }
 
     static void DecodeTruecolor(ReadOnlySpan<uint> prevScanline, ReadOnlySpan<byte> filteredScanline, byte type, Span<uint> scanline) {
+        ReadOnlySpan<byte> prevScanlineByte = MemoryMarshal.AsBytes(prevScanline);
         Span<byte> scanlineByte = MemoryMarshal.AsBytes(scanline);
 
         switch(type) {
@@ -214,18 +215,20 @@ public static class PngDecoder {
                 SubFiltering.FilterTruecolor(filteredScanline, scanlineByte);
                 break;
             case 2:
-                Filtering.FilterUp(prevScanline, filteredScanline, scanline);
+                UpFiltering.FilterTruecolor(prevScanlineByte, filteredScanline, scanlineByte);
                 break;
             case 3:
-                Filtering.FilterAverage(prevScanline, filteredScanline, scanline);
+                AverageFiltering.FilterTruecolor(prevScanlineByte, filteredScanline, scanlineByte);
                 break;
             case 4:
-                Filtering.FilterPaeth(prevScanline, filteredScanline, scanline);
+                PaethFiltering.FilterTruecolor(prevScanlineByte, filteredScanline, scanlineByte);
+                //Filtering.FilterPaeth(prevScanline, filteredScanline, scanline);
                 break;
         }
     }
 
     static void DecodeTruecolorAlpha(ReadOnlySpan<uint> prevScanline, ReadOnlySpan<byte> filteredScanline, byte type, Span<uint> scanline) {
+        ReadOnlySpan<byte> prevScanlineByte = MemoryMarshal.AsBytes(prevScanline);
         Span<byte> scanlineByte = MemoryMarshal.AsBytes(scanline);
 
         switch(type) {
@@ -236,13 +239,13 @@ public static class PngDecoder {
                 SubFiltering.FilterTruecolorAlpha(filteredScanline, scanlineByte);
                 break;
             case 2:
-                Filtering.FilterUp(prevScanline, filteredScanline, scanline);
+                UpFiltering.FilterTruecolorAlpha(prevScanlineByte, filteredScanline, scanlineByte);
                 break;
             case 3:
-                Filtering.FilterAverage(prevScanline, filteredScanline, scanline);
+                AverageFiltering.FilterTruecolorAlpha(prevScanlineByte, filteredScanline, scanlineByte);
                 break;
             case 4:
-                Filtering.FilterPaeth(prevScanline, filteredScanline, scanline);
+                PaethFiltering.FilterTruecolor(prevScanlineByte, filteredScanline, scanlineByte);
                 break;
         }
     }

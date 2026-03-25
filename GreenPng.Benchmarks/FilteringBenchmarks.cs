@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using BenchmarkDotNet.Attributes;
 using GreenPng.Filters;
@@ -5,9 +6,13 @@ using GreenPng.Filters;
 namespace GreenPng.Benchmarks;
 
 public class FilteringBenchmarks {
-    byte[] filtered3;
+    byte[] prevScanline;
 
-    byte[] filtered4;
+    uint[] prevScanline4;
+
+    byte[] filtered;
+
+    byte[] filteredAlpha;
 
     byte[] scanline;
 
@@ -15,9 +20,13 @@ public class FilteringBenchmarks {
 
     [GlobalSetup]
     public void Setup() {
-        filtered3 = RandomNumberGenerator.GetBytes(1024 * 3);
+        prevScanline = RandomNumberGenerator.GetBytes(1024 * 4);
 
-        filtered4 = RandomNumberGenerator.GetBytes(1024 * 4);
+        prevScanline4 = MemoryMarshal.Cast<byte, uint>(RandomNumberGenerator.GetBytes(1024 * 4)).ToArray();
+
+        filtered = RandomNumberGenerator.GetBytes(1024 * 3);
+
+        filteredAlpha = RandomNumberGenerator.GetBytes(1024 * 4);
 
         scanline = new byte[1024 * 4];
 
@@ -26,21 +35,56 @@ public class FilteringBenchmarks {
 
     [Benchmark]
     public void FilterNone() {
-        Filtering.FilterNone(filtered3, scanline);
+        Filtering.FilterNone(filtered, scanline);
     }
 
     [Benchmark]
     public void FilterNoneVec() {
-        NoneFiltering.FilterTruecolor(filtered3, scanline);
+        NoneFiltering.FilterTruecolor(filtered, scanline);
     }
 
     [Benchmark]
     public void FilterSub() {
-        Filtering.FilterSub(filtered3, scanline4);
+        Filtering.FilterSub(filtered, scanline4);
     }
 
     [Benchmark]
     public void FilterSubVec() {
-        SubFiltering.FilterTruecolor(filtered3, scanline);
+        SubFiltering.FilterTruecolor(filtered, scanline);
     }
+
+    [Benchmark]
+    public void FilterUp() {
+        Filtering.FilterUp(prevScanline4, filtered, scanline4);
+    }
+
+    [Benchmark]
+    public void FilterUpVec() {
+        UpFiltering.FilterTruecolor(prevScanline, filtered, scanline);
+    }
+
+    [Benchmark]
+    public void FilterAverage() {
+        Filtering.FilterAverage(prevScanline4, filtered, scanline4);
+    }
+
+    [Benchmark]
+    public void FilterAverageVec() {
+        AverageFiltering.FilterTruecolor(prevScanline, filtered, scanline);
+    }
+
+    [Benchmark]
+    public void FilterPaeth() {
+        Filtering.FilterPaeth(prevScanline4, filtered, scanline4);
+    }
+
+    [Benchmark]
+    public void FilterPaethVec() {
+        PaethFiltering.FilterTruecolor(prevScanline, filtered, scanline);
+    }
+
+    /*[Benchmark]
+    public void FilterPaethVec2() {
+        PaethFiltering.FilterTruecolor2(prevScanline, filtered, scanline);
+    }*/
 }
