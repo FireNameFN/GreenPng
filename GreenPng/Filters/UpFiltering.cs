@@ -14,9 +14,9 @@ public static class UpFiltering {
 
             Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
 
-            Vector256<byte> scanlineVector = Vector256.ShuffleNative(filteredVector, Filtering.Shuffle);
+            Vector256<byte> scanlineVector = Vector256.ShuffleNative(filteredVector, Filtering.Shuffle256);
 
-            scanlineVector = (scanlineVector + prevScanlineVector) | Filtering.MaskAlpha;
+            scanlineVector = (scanlineVector + prevScanlineVector) | Filtering.MaskAlpha256;
 
             scanlineVector.CopyTo(scanline[offset..]);
 
@@ -32,6 +32,7 @@ public static class UpFiltering {
             offset += 4;
         }
     }
+
     public static void FilterTruecolorAlpha(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
         int i = 0;
 
@@ -40,7 +41,7 @@ public static class UpFiltering {
 
             Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
 
-            Vector256<byte> scanlineVector = Vector256.ShuffleNative(filteredVector, Filtering.ShuffleAlpha);
+            Vector256<byte> scanlineVector = Vector256.ShuffleNative(filteredVector, Filtering.ShuffleAlpha256);
 
             scanlineVector += prevScanlineVector;
 

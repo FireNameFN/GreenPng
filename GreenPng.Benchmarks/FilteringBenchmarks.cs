@@ -82,9 +82,4 @@ public class FilteringBenchmarks {
     public void FilterPaethVec() {
         PaethFiltering.FilterTruecolor(prevScanline, filtered, scanline);
     }
-
-    /*[Benchmark]
-    public void FilterPaethVec2() {
-        PaethFiltering.FilterTruecolor2(prevScanline, filtered, scanline);
-    }*/
 }

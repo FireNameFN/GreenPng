@@ -5,21 +5,31 @@ using System.Runtime.Intrinsics;
 namespace GreenPng.Filters;
 
 public static class Filtering {
-    public static readonly Vector256<byte> Shuffle = Vector256.Create((byte)2, 1, 0, 3, 5, 4, 3, 7, 8, 7, 6, 11, 11, 10, 9, 15, 14, 13, 12, 19, 17, 16, 15, 23, 20, 19, 18, 27, 23, 22, 21, 31);
+    public static readonly Vector256<byte> Shuffle256 = Vector256.Create((byte)2, 1, 0, 3, 5, 4, 3, 7, 8, 7, 6, 11, 11, 10, 9, 15, 14, 13, 12, 19, 17, 16, 15, 23, 20, 19, 18, 27, 23, 22, 21, 31);
 
-    public static readonly Vector256<byte> ShuffleAlpha = Vector256.Create((byte)2, 1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14, 17, 16, 19, 18, 21, 20, 23, 22, 25, 24, 27, 26, 29, 28, 30);
+    public static readonly Vector256<byte> ShuffleAlpha256 = Vector256.Create((byte)2, 1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14, 17, 16, 19, 18, 21, 20, 23, 22, 25, 24, 27, 26, 29, 28, 30);
 
-    public static readonly Vector256<byte> MaskAlpha = Vector256.Create(0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255);
+    public static readonly Vector256<byte> MaskAlpha256 = Vector256.Create(0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255);
 
-    public static readonly Vector256<byte> MaskColor = Vector256.Create(255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0);
+    public static readonly Vector256<byte> LastShift256 = Vector256.Create((byte)28, 29, 30, 31, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31);
 
-    public static readonly Vector256<byte>[] ShiftArray;
+    public static readonly Vector256<byte> LastShiftMask256 = Vector256.Create(255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-    public static readonly Vector256<byte>[] ShiftMaskArray;
+    public static readonly Vector256<byte>[] ShiftArray256;
 
-    public static readonly Vector256<byte> LastShift = Vector256.Create((byte)28, 29, 30, 31, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31);
+    public static readonly Vector256<byte>[] ShiftMaskArray256;
 
-    public static readonly Vector256<byte> LastShiftMask = Vector256.Create(255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    public static readonly Vector128<byte> Shuffle128 = Vector128.Create((byte)2, 1, 0, 3, 5, 4, 3, 7, 8, 7, 6, 11, 11, 10, 9, 15);
+
+    public static readonly Vector128<byte> ShuffleAlpha128 = Vector128.Create((byte)2, 1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15);
+
+    public static readonly Vector128<byte> MaskAlpha128 = Vector128.Create(0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255);
+
+    public static readonly Vector128<byte> PixelMask128 = Vector128.Create(255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+    public static readonly Vector128<byte> Shift128 = Vector128.Create((byte)12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
+
+    public static readonly Vector128<byte>[] MaskArray128;
 
     static Filtering() {
         Span<byte> span = stackalloc byte[44];
@@ -27,27 +37,34 @@ public static class Filtering {
         for(int i = 0; i < 28; i++)
             span[i + 16] = (byte)i;
 
-        ShiftArray = new Vector256<byte>[3];
+        ShiftArray256 = new Vector256<byte>[3];
 
         int offset = 4;
 
         for(int i = 0; i < 3; i++) {
-            ShiftArray[i] = Vector256.Create(span[(16 - offset)..]);
+            ShiftArray256[i] = Vector256.Create(span[(16 - offset)..]);
 
             offset *= 2;
         }
 
         span[16..].Fill(255);
 
-        ShiftMaskArray = new Vector256<byte>[3];
+        ShiftMaskArray256 = new Vector256<byte>[3];
 
         offset = 4;
 
         for(int i = 0; i < 3; i++) {
-            ShiftMaskArray[i] = Vector256.Create(span[(16 - offset)..]);
+            ShiftMaskArray256[i] = Vector256.Create(span[(16 - offset)..]);
 
             offset *= 2;
         }
+
+        MaskArray128 = new Vector128<byte>[4];
+
+        MaskArray128[0] = Vector128.Create(255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+        for(int i = 0; i < 3; i++)
+            MaskArray128[i + 1] = Vector128.ShuffleNative(MaskArray128[i], Shift128);
     }
 
     public static void FilterNone(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {

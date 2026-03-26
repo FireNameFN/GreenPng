@@ -4,66 +4,33 @@ using System.Runtime.Intrinsics;
 namespace GreenPng.Filters;
 
 public static class PaethFiltering {
-    readonly static Vector128<byte> Shift = Vector128.Create((byte)12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
-
-    readonly static Vector128<byte>[] MaskArray;
-
-    public static readonly Vector128<byte> FirstPixelMask = Vector128.Create(0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255);
-
-    public static readonly Vector128<byte> Shuffle = Vector128.Create((byte)2, 1, 0, 3, 5, 4, 3, 7, 8, 7, 6, 11, 11, 10, 9, 15);
-
-    public static readonly Vector128<byte> ShuffleAlpha = Vector128.Create((byte)2, 1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15);
-
-    public static readonly Vector128<byte> MaskAlpha = Vector128.Create(0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255);
-
-    public static readonly Vector128<byte> LastShift = Vector128.Create((byte)28, 29, 30, 31, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
-
-    public static readonly Vector128<byte> LastShiftMask = Vector128.Create(255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
-    static PaethFiltering() {
-        MaskArray = new Vector128<byte>[4];
-
-        MaskArray[0] = Vector128.Create(255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
-        for(int i = 0; i < 3; i++)
-            MaskArray[i + 1] = Vector128.ShuffleNative(MaskArray[i], Shift);
-    }
-
     public static void FilterTruecolor(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
         int i = 0;
 
         int offset = 0;
 
-        Vector128<byte> diagonalScanlineVector = Vector128.ShuffleNative(Vector128.Create(prevScanline), Shift) & FirstPixelMask;
+        Vector128<byte> diagonalScanlineVector = default;
 
         Vector128<byte> subScanlineVector = default;
 
-        for(; i < filteredScanline.Length - 15; i += 12) {
+        for(; i < filteredScanline.Length - 15; i += 3) {
             Vector128<byte> prevScanlineVector = Vector128.Create(prevScanline[offset..]);
 
             Vector128<byte> filteredVector = Vector128.Create(filteredScanline[i..]);
 
-            Vector128<byte> scanlineVector = Vector128.ShuffleNative(filteredVector, Shuffle);
+            Vector128<byte> scanlineVector = Vector128.ShuffleNative(filteredVector, Filtering.Shuffle128);
 
-            if(offset >= 4)
-                diagonalScanlineVector = Vector128.Create(prevScanline[(offset - 4)..]);
+            scanlineVector += Paeth(subScanlineVector, prevScanlineVector, diagonalScanlineVector) & Filtering.PixelMask128;
 
-            for(int j = 0; j < 4; j++) {
-                Vector128<byte> subVector = subScanlineVector;
-
-                if(j > 0)
-                    subVector = Vector128.ShuffleNative(scanlineVector, Shift);
-
-                scanlineVector += Paeth(subVector, prevScanlineVector, diagonalScanlineVector) & MaskArray[j];
-            }
-
-            scanlineVector |= MaskAlpha;
-
-            subScanlineVector = Vector128.ShuffleNative(scanlineVector, LastShift) & LastShiftMask;
+            scanlineVector |= Filtering.MaskAlpha128;
 
             scanlineVector.CopyTo(scanline[offset..]);
 
-            offset += 16;
+            diagonalScanlineVector = prevScanlineVector;
+
+            subScanlineVector = scanlineVector;
+
+            offset += 4;
         }
 
         if(i < 1) {
@@ -96,7 +63,7 @@ public static class PaethFiltering {
 
             Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
 
-            Vector256<byte> scanlineVector = Vector256.ShuffleNative(filteredVector, Filtering.ShuffleAlpha);
+            Vector256<byte> scanlineVector = Vector256.ShuffleNative(filteredVector, Filtering.ShuffleAlpha256);
 
             for(int j = 0; j < 8; j++) {
                 Vector256<byte> subVector = subScanlineVector;
@@ -111,7 +78,7 @@ public static class PaethFiltering {
                 //scanlineVector += (and + xor) & MaskArray[j];
             }
 
-            subScanlineVector = Vector256.ShuffleNative(scanlineVector, Filtering.LastShift) & Filtering.LastShiftMask;
+            subScanlineVector = Vector256.ShuffleNative(scanlineVector, Filtering.LastShift256) & Filtering.LastShiftMask256;
 
             scanlineVector.CopyTo(scanline[i..]);
         }
