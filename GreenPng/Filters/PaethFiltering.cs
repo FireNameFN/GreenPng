@@ -56,45 +56,40 @@ public static class PaethFiltering {
     public static void FilterTruecolorAlpha(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
         int i = 0;
 
-        Vector256<byte> subScanlineVector = default;
+        Vector128<byte> diagonalScanlineVector = default;
 
-        for(; i < filteredScanline.Length - 31; i += 32) {
-            Vector256<byte> prevScanlineVector = Vector256.Create(prevScanline[i..]);
+        Vector128<byte> subScanlineVector = default;
 
-            Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
+        for(; i < filteredScanline.Length - 15; i += 4) {
+            Vector128<byte> prevScanlineVector = Vector128.Create(prevScanline[i..]);
 
-            Vector256<byte> scanlineVector = Vector256.ShuffleNative(filteredVector, Filtering.ShuffleAlpha256);
+            Vector128<byte> filteredVector = Vector128.Create(filteredScanline[i..]);
 
-            for(int j = 0; j < 8; j++) {
-                Vector256<byte> subVector = subScanlineVector;
+            Vector128<byte> scanlineVector = Vector128.ShuffleNative(filteredVector, Filtering.ShuffleAlpha128);
 
-                //if(j > 0)
-                //    subVector = Vector256.ShuffleNative(scanlineVector, Shift);
-
-                Vector256<byte> and = prevScanlineVector & subVector;
-
-                Vector256<byte> xor = (prevScanlineVector ^ subVector) >> 1;
-
-                //scanlineVector += (and + xor) & MaskArray[j];
-            }
-
-            subScanlineVector = Vector256.ShuffleNative(scanlineVector, Filtering.LastShift256) & Filtering.LastShiftMask256;
+            scanlineVector += Paeth(subScanlineVector, prevScanlineVector, diagonalScanlineVector) & Filtering.PixelMask128;
 
             scanlineVector.CopyTo(scanline[i..]);
+
+            diagonalScanlineVector = prevScanlineVector;
+
+            subScanlineVector = scanlineVector;
         }
 
         if(i < 1) {
-            scanline[0] = (byte)(filteredScanline[2] + scanline[0] / 2);
-            scanline[1] = (byte)(filteredScanline[1] + scanline[1] / 2);
-            scanline[2] = (byte)(filteredScanline[0] + scanline[2] / 2);
-            scanline[3] = 0xFF;
+            scanline[0] = (byte)(filteredScanline[2] + Paeth(0, scanline[0], 0));
+            scanline[1] = (byte)(filteredScanline[1] + Paeth(0, scanline[1], 0));
+            scanline[2] = (byte)(filteredScanline[0] + Paeth(0, scanline[2], 0));
+            scanline[3] = (byte)(filteredScanline[3] + Paeth(0, scanline[3], 0));
+
+            i = 4;
         }
 
-        for(; i < filteredScanline.Length; i += 3) {
-            scanline[i] = (byte)(filteredScanline[i + 2] + (scanline[i - 4] + prevScanline[i]) / 2);
-            scanline[i + 1] = (byte)(filteredScanline[i + 1] + (scanline[i - 3] + prevScanline[i + 1]) / 2);
-            scanline[i + 2] = (byte)(filteredScanline[i] + (scanline[i - 2] + prevScanline[i + 2]) / 2);
-            scanline[i + 3] = (byte)(filteredScanline[i + 3] + (scanline[i - 1] + prevScanline[i + 3]) / 2);
+        for(; i < filteredScanline.Length; i += 4) {
+            scanline[i] = (byte)(filteredScanline[i + 2] + Paeth(scanline[i - 4], prevScanline[i], prevScanline[i - 4]));
+            scanline[i + 1] = (byte)(filteredScanline[i + 1] + Paeth(scanline[i - 3], prevScanline[i + 1], prevScanline[i - 3]));
+            scanline[i + 2] = (byte)(filteredScanline[i] + Paeth(scanline[i - 2], prevScanline[i + 2], prevScanline[i - 2]));
+            scanline[i + 3] = (byte)(filteredScanline[i + 3] + Paeth(scanline[i - 1], prevScanline[i + 3], prevScanline[i - 1]));
         }
     }
 

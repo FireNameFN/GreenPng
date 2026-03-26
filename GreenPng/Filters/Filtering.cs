@@ -7,7 +7,7 @@ namespace GreenPng.Filters;
 public static class Filtering {
     public static readonly Vector256<byte> Shuffle256 = Vector256.Create((byte)2, 1, 0, 3, 5, 4, 3, 7, 8, 7, 6, 11, 11, 10, 9, 15, 14, 13, 12, 19, 17, 16, 15, 23, 20, 19, 18, 27, 23, 22, 21, 31);
 
-    public static readonly Vector256<byte> ShuffleAlpha256 = Vector256.Create((byte)2, 1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14, 17, 16, 19, 18, 21, 20, 23, 22, 25, 24, 27, 26, 29, 28, 30);
+    public static readonly Vector256<byte> ShuffleAlpha256 = Vector256.Create((byte)2, 1, 0, 3, 6, 5, 4, 7, 10, 9, 8, 11, 14, 13, 12, 15, 18, 17, 16, 19, 22, 21, 20, 23, 26, 25, 24, 27, 30, 29, 28, 31);
 
     public static readonly Vector256<byte> MaskAlpha256 = Vector256.Create(0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255);
 
@@ -21,7 +21,7 @@ public static class Filtering {
 
     public static readonly Vector128<byte> Shuffle128 = Vector128.Create((byte)2, 1, 0, 3, 5, 4, 3, 7, 8, 7, 6, 11, 11, 10, 9, 15);
 
-    public static readonly Vector128<byte> ShuffleAlpha128 = Vector128.Create((byte)2, 1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15);
+    public static readonly Vector128<byte> ShuffleAlpha128 = Vector128.Create((byte)2, 1, 0, 3, 6, 5, 4, 7, 10, 9, 8, 11, 14, 13, 12, 15);
 
     public static readonly Vector128<byte> MaskAlpha128 = Vector128.Create(0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255);
 

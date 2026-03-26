@@ -1,4 +1,4 @@
 using BenchmarkDotNet.Running;
 using GreenPng.Benchmarks;
 
-BenchmarkRunner.Run<FilteringBenchmarks>();
+BenchmarkRunner.Run<DecodeBenchmarks>();

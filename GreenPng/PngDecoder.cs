@@ -245,7 +245,7 @@ public static class PngDecoder {
                 AverageFiltering.FilterTruecolorAlpha(prevScanlineByte, filteredScanline, scanlineByte);
                 break;
             case 4:
-                PaethFiltering.FilterTruecolor(prevScanlineByte, filteredScanline, scanlineByte);
+                PaethFiltering.FilterTruecolorAlpha(prevScanlineByte, filteredScanline, scanlineByte);
                 break;
         }
     }

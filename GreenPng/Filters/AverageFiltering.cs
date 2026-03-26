@@ -59,29 +59,24 @@ public static class AverageFiltering {
     public static void FilterTruecolorAlpha(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
         int i = 0;
 
-        Vector256<byte> subScanlineVector = default;
+        Vector128<byte> subScanlineVector = default;
 
-        for(; i < filteredScanline.Length - 31; i += 32) {
-            Vector256<byte> prevScanlineVector = Vector256.Create(prevScanline[i..]);
+        for(; i < filteredScanline.Length - 15; i += 16) {
+            Vector128<byte> prevScanlineVector = Vector128.Create(prevScanline[i..]);
 
-            Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
+            Vector128<byte> filteredVector = Vector128.Create(filteredScanline[i..]);
 
-            Vector256<byte> scanlineVector = Vector256.ShuffleNative(filteredVector, Filtering.ShuffleAlpha256);
+            Vector128<byte> scanlineVector = Vector128.ShuffleNative(filteredVector, Filtering.ShuffleAlpha128);
 
-            for(int j = 0; j < 8; j++) {
-                Vector256<byte> subVector = subScanlineVector;
+            for(int j = 0; j < 4; j++) {
+                Vector128<byte> and = prevScanlineVector & subScanlineVector;
 
-                //if(j > 0)
-                //    subVector = Vector256.ShuffleNative(scanlineVector, Shift);
+                Vector128<byte> xor = (prevScanlineVector ^ subScanlineVector) >> 1;
 
-                Vector256<byte> and = prevScanlineVector & subVector;
+                scanlineVector += (and + xor) & Filtering.MaskArray128[j];
 
-                Vector256<byte> xor = (prevScanlineVector ^ subVector) >> 1;
-
-                //scanlineVector += (and + xor) & MaskArray[j];
+                subScanlineVector = Vector128.ShuffleNative(scanlineVector, Filtering.Shift128);
             }
-
-            subScanlineVector = Vector256.ShuffleNative(scanlineVector, Filtering.LastShift256) & Filtering.LastShiftMask256;
 
             scanlineVector.CopyTo(scanline[i..]);
         }
@@ -90,7 +85,7 @@ public static class AverageFiltering {
             scanline[0] = (byte)(filteredScanline[2] + scanline[0] / 2);
             scanline[1] = (byte)(filteredScanline[1] + scanline[1] / 2);
             scanline[2] = (byte)(filteredScanline[0] + scanline[2] / 2);
-            scanline[3] = 0xFF;
+            scanline[3] = (byte)(filteredScanline[3] + scanline[3] / 2);
         }
 
         for(; i < filteredScanline.Length; i += 3) {
