@@ -148,26 +148,12 @@ public static class PngDecoder {
             }
         }
 
-        Span<byte> reversedPalette = stackalloc byte[1024];
+        int stride = header.Width * 4;
 
-        int offset1 = 0;
-
-        for(int i = 0; i < palette.Length; i += 3) {
-            reversedPalette[offset1] = palette[i + 2];
-            reversedPalette[offset1 + 1] = palette[i + 1];
-            reversedPalette[offset1 + 2] = palette[i];
-
-            offset1 += 4;
-        }
-
-        Span<uint> reversedPalettePixel = MemoryMarshal.Cast<byte, uint>(reversedPalette);
-
-        Span<uint> imagePixel = MemoryMarshal.Cast<byte, uint>(image);
-
-        Span<uint> prevScanline = stackalloc uint[header.Width];
+        Span<byte> prevScanline = stackalloc byte[stride];
 
         for(int y = 0; y < header.Height; y++) {
-            Span<uint> scanline = imagePixel.Slice(header.Width * y, header.Width);
+            Span<byte> scanline = image.Slice(stride * y, stride);
 
             int filteredOffset = filteredLength * y;
 
@@ -183,9 +169,9 @@ public static class PngDecoder {
                     break;
                 case ImageType.IndexedColor:
                     if(transparency.Length < 1)
-                        DecodeIndexed(reversedPalettePixel, filteredScanline, scanline);
+                        DecodeIndexed(palette, filteredScanline, scanline);
                     else
-                        DecodeIndexedAlpha(reversedPalettePixel, transparency, filteredScanline, scanline);
+                        DecodeIndexedAlpha(palette, transparency, filteredScanline, scanline);
 
                     break;
                 case ImageType.GreyscaleAlpha:
@@ -203,74 +189,93 @@ public static class PngDecoder {
         return true;
     }
 
-    static void DecodeTruecolor(ReadOnlySpan<uint> prevScanline, ReadOnlySpan<byte> filteredScanline, byte type, Span<uint> scanline) {
-        ReadOnlySpan<byte> prevScanlineByte = MemoryMarshal.AsBytes(prevScanline);
-        Span<byte> scanlineByte = MemoryMarshal.AsBytes(scanline);
-
+    static void DecodeTruecolor(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, byte type, Span<byte> scanline) {
         switch(type) {
             case 0:
-                NoneFiltering.FilterTruecolor(filteredScanline, scanlineByte);
+                NoneFiltering.FilterTruecolor(filteredScanline, scanline);
                 break;
             case 1:
-                SubFiltering.FilterTruecolor(filteredScanline, scanlineByte);
+                SubFiltering.FilterTruecolor(filteredScanline, scanline);
                 break;
             case 2:
-                UpFiltering.FilterTruecolor(prevScanlineByte, filteredScanline, scanlineByte);
+                UpFiltering.FilterTruecolor(prevScanline, filteredScanline, scanline);
                 break;
             case 3:
-                AverageFiltering.FilterTruecolor(prevScanlineByte, filteredScanline, scanlineByte);
+                AverageFiltering.FilterTruecolor(prevScanline, filteredScanline, scanline);
                 break;
             case 4:
-                PaethFiltering.FilterTruecolor(prevScanlineByte, filteredScanline, scanlineByte);
-                //Filtering.FilterPaeth(prevScanline, filteredScanline, scanline);
+                PaethFiltering.FilterTruecolor(prevScanline, filteredScanline, scanline);
                 break;
         }
     }
 
-    static void DecodeTruecolorAlpha(ReadOnlySpan<uint> prevScanline, ReadOnlySpan<byte> filteredScanline, byte type, Span<uint> scanline) {
-        ReadOnlySpan<byte> prevScanlineByte = MemoryMarshal.AsBytes(prevScanline);
-        Span<byte> scanlineByte = MemoryMarshal.AsBytes(scanline);
-
+    static void DecodeTruecolorAlpha(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, byte type, Span<byte> scanline) {
         switch(type) {
             case 0:
-                NoneFiltering.FilterTruecolorAlpha(filteredScanline, scanlineByte);
+                NoneFiltering.FilterTruecolorAlpha(filteredScanline, scanline);
                 break;
             case 1:
-                SubFiltering.FilterTruecolorAlpha(filteredScanline, scanlineByte);
+                SubFiltering.FilterTruecolorAlpha(filteredScanline, scanline);
                 break;
             case 2:
-                UpFiltering.FilterTruecolorAlpha(prevScanlineByte, filteredScanline, scanlineByte);
+                UpFiltering.FilterTruecolorAlpha(prevScanline, filteredScanline, scanline);
                 break;
             case 3:
-                AverageFiltering.FilterTruecolorAlpha(prevScanlineByte, filteredScanline, scanlineByte);
+                AverageFiltering.FilterTruecolorAlpha(prevScanline, filteredScanline, scanline);
                 break;
             case 4:
-                PaethFiltering.FilterTruecolorAlpha(prevScanlineByte, filteredScanline, scanlineByte);
+                PaethFiltering.FilterTruecolorAlpha(prevScanline, filteredScanline, scanline);
                 break;
         }
     }
 
-    static void DecodeIndexed(ReadOnlySpan<uint> reversedPalettePixel, ReadOnlySpan<byte> filteredScanline, Span<uint> scanline) {
-        for(int x = 0; x < scanline.Length; x++) {
+    static void DecodeIndexed(ReadOnlySpan<byte> palette, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
+        Span<uint> scanlinePixel = MemoryMarshal.Cast<byte, uint>(scanline);
+
+        Span<uint> reversedPalette = stackalloc uint[1024];
+
+        ReversePalette(palette, reversedPalette);
+
+        for(int x = 0; x < scanlinePixel.Length; x++) {
             int index = filteredScanline[x];
 
-            uint pixel = reversedPalettePixel[index];
+            uint pixel = reversedPalette[index];
 
             pixel |= 0xFF000000;
 
-            scanline[x] = pixel;
+            scanlinePixel[x] = pixel;
         }
     }
 
-    static void DecodeIndexedAlpha(ReadOnlySpan<uint> reversedPalettePixel, ReadOnlySpan<byte> transparency, ReadOnlySpan<byte> filteredScanline, Span<uint> scanline) {
-        for(int x = 0; x < scanline.Length; x++) {
+    static void DecodeIndexedAlpha(ReadOnlySpan<byte> palette, ReadOnlySpan<byte> transparency, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
+        Span<uint> scanlinePixel = MemoryMarshal.Cast<byte, uint>(scanline);
+
+        Span<uint> reversedPalette = stackalloc uint[1024];
+
+        ReversePalette(palette, reversedPalette);
+
+        for(int x = 0; x < scanlinePixel.Length; x++) {
             int index = filteredScanline[x];
 
-            uint pixel = reversedPalettePixel[index];
+            uint pixel = reversedPalette[index];
 
             pixel |= (uint)transparency[index] << 24;
 
-            scanline[x] = pixel;
+            scanlinePixel[x] = pixel;
+        }
+    }
+
+    static void ReversePalette(ReadOnlySpan<byte> palette, Span<uint> reversedPalette) {
+        Span<byte> reversedPaletteByte = MemoryMarshal.AsBytes(reversedPalette);
+
+        int offset = 0;
+
+        for(int i = 0; i < palette.Length; i += 3) {
+            reversedPaletteByte[offset] = palette[i + 2];
+            reversedPaletteByte[offset + 1] = palette[i + 1];
+            reversedPaletteByte[offset + 2] = palette[i];
+
+            offset += 4;
         }
     }
 }
