@@ -4,7 +4,7 @@ using System.Runtime.Intrinsics;
 namespace GreenPng.Filters;
 
 public static class NoneFiltering {
-    public static void FilterTruecolor(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
+    public static void Filter(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
         int i = 0;
 
         int offset = 0;
@@ -29,7 +29,7 @@ public static class NoneFiltering {
         }
     }
 
-    public static void FilterTruecolorAlpha(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
+    public static void FilterAlpha(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
         int i = 0;
 
         for(; i < filteredScanline.Length - 31; i += 32) {

@@ -40,7 +40,7 @@ public class FilteringBenchmarks {
 
     [Benchmark]
     public void FilterNoneVec() {
-        NoneFiltering.FilterTruecolor(filtered, scanline);
+        NoneFiltering.Filter(filtered, scanline);
     }
 
     [Benchmark]
@@ -50,7 +50,7 @@ public class FilteringBenchmarks {
 
     [Benchmark]
     public void FilterSubVec() {
-        SubFiltering.FilterTruecolor(filtered, scanline);
+        SubFiltering.Filter(filtered, scanline);
     }
 
     [Benchmark]
@@ -60,7 +60,7 @@ public class FilteringBenchmarks {
 
     [Benchmark]
     public void FilterUpVec() {
-        UpFiltering.FilterTruecolor(prevScanline, filtered, scanline);
+        UpFiltering.Filter(prevScanline, filtered, scanline);
     }
 
     [Benchmark]
@@ -70,7 +70,7 @@ public class FilteringBenchmarks {
 
     [Benchmark]
     public void FilterAverageVec() {
-        AverageFiltering.FilterTruecolor(prevScanline, filtered, scanline);
+        AverageFiltering.Filter(prevScanline, filtered, scanline);
     }
 
     [Benchmark]
@@ -80,6 +80,6 @@ public class FilteringBenchmarks {
 
     [Benchmark]
     public void FilterPaethVec() {
-        PaethFiltering.FilterTruecolor(prevScanline, filtered, scanline);
+        PaethFiltering.Filter(prevScanline, filtered, scanline);
     }
 }
