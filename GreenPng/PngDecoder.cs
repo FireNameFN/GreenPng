@@ -168,7 +168,7 @@ public static class PngDecoder {
                     break;
                 case ImageType.IndexedColor:
                     if(transparency.Length < 1)
-                        IndexedDecoder.Decode(palette, filteredScanline, scanline);
+                        IndexedDecoder.Decode2(palette, filteredScanline, scanline);
                     else
                         IndexedDecoder.DecodeAlpha(palette, transparency, filteredScanline, scanline);
 

@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using GreenPng.Filters;
 
 namespace GreenPng.Decoders;
@@ -22,9 +23,43 @@ public static class IndexedDecoder {
 
             uint pixel = reversedPalette[index];
 
+            scanlinePixel[x] = pixel;
+        }
+    }
+
+    public static unsafe void Decode2(ReadOnlySpan<byte> palette, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
+        Span<uint> scanlinePixel = MemoryMarshal.Cast<byte, uint>(scanline);
+
+        uint* reversedPalette = stackalloc uint[1024];
+
+        NoneFiltering.Filter(palette, MemoryMarshal.AsBytes(new Span<uint>(reversedPalette, 1024)));
+
+        var vdfgdf = new Span<uint>(reversedPalette, 1024);
+
+        int i = 0;
+
+        for(; i < filteredScanline.Length - 31; i += 8) {
+            Vector64<byte> filteredVector = Vector64.Create(filteredScanline[i..]);
+
+            (Vector64<ushort> lower, Vector64<ushort> upper) = Vector64.Widen(filteredVector);
+
+            (Vector128<uint> lower12, Vector128<uint> upper12) = Vector128.Widen(Vector128.Create(lower, upper));
+
+            Vector256<uint> indexVector = Vector256.Create(lower12, upper12);
+
+            Vector256<uint> scanlineVector = Avx2.GatherVector256(reversedPalette, indexVector.AsInt32(), 4);
+
+            scanlineVector.CopyTo(scanlinePixel[i..]);
+        }
+
+        for(; i < scanlinePixel.Length; i++) {
+            int index = filteredScanline[i];
+
+            uint pixel = reversedPalette[index];
+
             pixel |= 0xFF000000;
 
-            scanlinePixel[x] = pixel;
+            scanlinePixel[i] = pixel;
         }
     }
 

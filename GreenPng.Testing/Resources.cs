@@ -7,7 +7,7 @@ public static class Resources {
 
     public static readonly byte[] TruecolorAlpha = GetResource("truecolor_alpha");
 
-    public static readonly byte[] Indexed = GetResource("indexed");
+    public static readonly byte[] Indexed = GetResource("indexed2");
 
     public static readonly byte[] IndexedAlpha = GetResource("indexed_alpha");
 
