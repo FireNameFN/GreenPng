@@ -116,14 +116,24 @@ public static class PngDecoder {
         return false;
     }
 
-    public static byte[] Decode(ReadOnlySpan<byte> png, out PngHeader header) {
-        if(!TryDecodeHeader(png, out header))
+    public static PngHeader DecodeHeader(ReadOnlySpan<byte> png) {
+        if(!TryDecodeHeader(png, out PngHeader header))
             throw new InvalidOperationException("Header decode error.");
+
+        return header;
+    }
+
+    public static void Decode(ReadOnlySpan<byte> png, PngHeader header, Span<byte> image) {
+        if(!TryDecode(png, header, image))
+            throw new InvalidOperationException("Image decode error.");
+    }
+
+    public static byte[] Decode(ReadOnlySpan<byte> png, out PngHeader header) {
+        header = DecodeHeader(png);
 
         byte[] image = new byte[header.ByteSize];
 
-        if(!TryDecode(png, header, image))
-            throw new InvalidOperationException("Image decode error.");
+        Decode(png, header, image);
 
         return image;
     }
