@@ -198,9 +198,8 @@ public static class PngDecoder {
 
             switch(header.ImageType) {
                 case ImageType.Greyscale:
-                    break;
                 case ImageType.Truecolor:
-                    TruecolorDecoder.Decode(scanline, decodedScanline);
+                    OpaqueDecoder.Decode(scanline, decodedScanline);
                     break;
                 case ImageType.IndexedColor:
                     IndexedDecoder.Decode(palette, transparency, scanline, decodedScanline);

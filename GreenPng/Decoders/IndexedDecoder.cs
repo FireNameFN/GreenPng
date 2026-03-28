@@ -17,7 +17,7 @@ public static class IndexedDecoder {
         if(transparency.Length > 0)
             DecodeTransparency(transparency, lookup);
         else
-            TruecolorDecoder.Decode(lookup, lookup);
+            OpaqueDecoder.Decode(lookup, lookup);
 
         uint* lookupPointer = (uint*)Unsafe.AsPointer(ref lookup[0]);
 

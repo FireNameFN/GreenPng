@@ -3,7 +3,7 @@ using System.Runtime.Intrinsics;
 
 namespace GreenPng.Decoders;
 
-public sealed class TruecolorDecoder {
+public sealed class OpaqueDecoder {
     public static void Decode(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
         int i = 0;
 
