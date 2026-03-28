@@ -23,14 +23,16 @@ public static class IndexedDecoder {
 
         int i = 0;
 
-        for(; i < filteredScanline.Length - 31; i += 8) {
-            Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
+        if(Avx2.IsSupported && Vector256.IsHardwareAccelerated) {
+            for(; i < filteredScanline.Length - 31; i += 8) {
+                Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
 
-            Vector256<byte> indexVector = filteredVector & Vectors.MaskMono256;
+                Vector256<byte> indexVector = filteredVector & Vectors256.MaskMono;
 
-            Vector256<uint> scanlineVector = Avx2.GatherVector256(lookupPointer, indexVector.AsInt32(), 4);
+                Vector256<uint> scanlineVector = Avx2.GatherVector256(lookupPointer, indexVector.AsInt32(), 4);
 
-            scanlineVector.AsByte().CopyTo(scanline[i..]);
+                scanlineVector.AsByte().CopyTo(scanline[i..]);
+            }
         }
 
         for(; i < filteredScanline.Length; i += 4) {
@@ -47,18 +49,20 @@ public static class IndexedDecoder {
 
         int offset = 0;
 
-        for(; i < transparency.Length - 31; i += 8) {
-            Vector256<byte> transparencyVector = Vector256.Create(transparency[i..]);
+        if(Vector256.IsHardwareAccelerated) {
+            for(; i < transparency.Length - 31; i += 8) {
+                Vector256<byte> transparencyVector = Vector256.Create(transparency[i..]);
 
-            Vector256<byte> lookupVector = Vector256.Create(lookup[offset..]);
+                Vector256<byte> lookupVector = Vector256.Create(lookup[offset..]);
 
-            transparencyVector = Vector256.ShuffleNative(transparencyVector, Vectors.ShuffleMono256);
+                transparencyVector = Vector256.ShuffleNative(transparencyVector, Vectors256.ShuffleMono);
 
-            lookupVector = Vector256.ConditionalSelect(Vectors.MaskAlpha256, transparencyVector, lookupVector);
+                lookupVector = Vector256.ConditionalSelect(Vectors256.MaskAlpha, transparencyVector, lookupVector);
 
-            lookupVector.CopyTo(lookup[offset..]);
+                lookupVector.CopyTo(lookup[offset..]);
 
-            offset += 32;
+                offset += 32;
+            }
         }
 
         offset += 3;

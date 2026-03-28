@@ -7,23 +7,25 @@ public static class SubFiltering {
     public static void Filter(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
         int i = 0;
 
-        Vector256<byte> subScanlineVector = default;
+        if(Vector256.IsHardwareAccelerated) {
+            Vector256<byte> subScanlineVector = default;
 
-        for(; i < filteredScanline.Length - 31; i += 32) {
-            Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
+            for(; i < filteredScanline.Length - 31; i += 32) {
+                Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
 
-            Vector256<byte> scanlineVector = filteredVector + subScanlineVector;
+                Vector256<byte> scanlineVector = filteredVector + subScanlineVector;
 
-            for(int j = 0; j < 3; j++) {
-                Vector256<byte> shift = Vectors.ShiftArray256[j];
-                Vector256<byte> mask = Vectors.ShiftMaskArray256[j];
+                for(int j = 0; j < 3; j++) {
+                    Vector256<byte> shift = Vectors256.ShiftArray[j];
+                    Vector256<byte> mask = Vectors256.ShiftMaskArray[j];
 
-                scanlineVector += Vector256.ShuffleNative(scanlineVector, shift) & mask;
+                    scanlineVector += Vector256.ShuffleNative(scanlineVector, shift) & mask;
+                }
+
+                subScanlineVector = Vector256.ShuffleNative(scanlineVector, Vectors256.LastShift) & Vectors256.LastShiftMask;
+
+                scanlineVector.CopyTo(scanline[i..]);
             }
-
-            subScanlineVector = Vector256.ShuffleNative(scanlineVector, Vectors.LastShift256) & Vectors.LastShiftMask256;
-
-            scanlineVector.CopyTo(scanline[i..]);
         }
 
         if(i < 1) {

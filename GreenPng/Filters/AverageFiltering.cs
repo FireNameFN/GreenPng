@@ -7,26 +7,28 @@ public static class AverageFiltering {
     public static void Filter(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
         int i = 0;
 
-        Vector128<byte> subScanlineVector = default;
+        if(Vector128.IsHardwareAccelerated) {
+            Vector128<byte> subScanlineVector = default;
 
-        for(; i < filteredScanline.Length - 15; i += 16) {
-            Vector128<byte> prevScanlineVector = Vector128.Create(prevScanline[i..]);
+            for(; i < filteredScanline.Length - 15; i += 16) {
+                Vector128<byte> prevScanlineVector = Vector128.Create(prevScanline[i..]);
 
-            Vector128<byte> filteredVector = Vector128.Create(filteredScanline[i..]);
+                Vector128<byte> filteredVector = Vector128.Create(filteredScanline[i..]);
 
-            Vector128<byte> scanlineVector = filteredVector;
+                Vector128<byte> scanlineVector = filteredVector;
 
-            for(int j = 0; j < 4; j++) {
-                Vector128<byte> and = prevScanlineVector & subScanlineVector;
+                for(int j = 0; j < 4; j++) {
+                    Vector128<byte> and = prevScanlineVector & subScanlineVector;
 
-                Vector128<byte> xor = (prevScanlineVector ^ subScanlineVector) >> 1;
+                    Vector128<byte> xor = (prevScanlineVector ^ subScanlineVector) >> 1;
 
-                scanlineVector += (and + xor) & Vectors.MaskArray128[j];
+                    scanlineVector += (and + xor) & Vectors128.MaskArray[j];
 
-                subScanlineVector = Vector128.ShuffleNative(scanlineVector, Vectors.Shift128);
+                    subScanlineVector = Vector128.ShuffleNative(scanlineVector, Vectors128.Shift);
+                }
+
+                scanlineVector.CopyTo(scanline[i..]);
             }
-
-            scanlineVector.CopyTo(scanline[i..]);
         }
 
         if(i < 1) {

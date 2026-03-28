@@ -7,12 +7,14 @@ public sealed class OpaqueDecoder {
     public static void Decode(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
         int i = 0;
 
-        for(; i < filteredScanline.Length - 31; i += 32) {
-            Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
+        if(Vector256.IsHardwareAccelerated) {
+            for(; i < filteredScanline.Length - 31; i += 32) {
+                Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
 
-            Vector256<byte> scanlineVector = filteredVector | Vectors.MaskAlpha256;
+                Vector256<byte> scanlineVector = filteredVector | Vectors256.MaskAlpha;
 
-            scanlineVector.CopyTo(scanline[i..]);
+                scanlineVector.CopyTo(scanline[i..]);
+            }
         }
 
         for(; i < filteredScanline.Length; i += 4) {

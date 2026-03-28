@@ -9,14 +9,16 @@ public static class Deserializer {
 
         int offset = 0;
 
-        for(; i < serializedScanline.Length - 31; i += 8) {
-            Vector256<byte> serializedVector = Vector256.Create(serializedScanline[i..]);
+        if(Vector256.IsHardwareAccelerated) {
+            for(; i < serializedScanline.Length - 31; i += 8) {
+                Vector256<byte> serializedVector = Vector256.Create(serializedScanline[i..]);
 
-            Vector256<byte> scanlineVector = Vector256.ShuffleNative(serializedVector, Vectors.ShuffleMono256);
+                Vector256<byte> scanlineVector = Vector256.ShuffleNative(serializedVector, Vectors256.ShuffleMono);
 
-            scanlineVector.CopyTo(scanline[offset..]);
+                scanlineVector.CopyTo(scanline[offset..]);
 
-            offset += 32;
+                offset += 32;
+            }
         }
 
         for(; i < serializedScanline.Length; i++) {
@@ -34,14 +36,16 @@ public static class Deserializer {
 
         int offset = 0;
 
-        for(; i < serializedScanline.Length - 31; i += 24) {
-            Vector256<byte> serializedVector = Vector256.Create(serializedScanline[i..]);
+        if(Vector256.IsHardwareAccelerated) {
+            for(; i < serializedScanline.Length - 31; i += 24) {
+                Vector256<byte> serializedVector = Vector256.Create(serializedScanline[i..]);
 
-            Vector256<byte> scanlineVector = Vector256.ShuffleNative(serializedVector, Vectors.Shuffle256);
+                Vector256<byte> scanlineVector = Vector256.ShuffleNative(serializedVector, Vectors256.Shuffle);
 
-            scanlineVector.CopyTo(scanline[offset..]);
+                scanlineVector.CopyTo(scanline[offset..]);
 
-            offset += 32;
+                offset += 32;
+            }
         }
 
         for(; i < serializedScanline.Length; i += 3) {
@@ -56,12 +60,14 @@ public static class Deserializer {
     public static void Deserialize32(ReadOnlySpan<byte> serializedScanline, Span<byte> scanline) {
         int i = 0;
 
-        for(; i < serializedScanline.Length - 31; i += 32) {
-            Vector256<byte> serializedVector = Vector256.Create(serializedScanline[i..]);
+        if(Vector256.IsHardwareAccelerated) {
+            for(; i < serializedScanline.Length - 31; i += 32) {
+                Vector256<byte> serializedVector = Vector256.Create(serializedScanline[i..]);
 
-            Vector256<byte> scanlineVector = Vector256.ShuffleNative(serializedVector, Vectors.ShuffleAlpha256);
+                Vector256<byte> scanlineVector = Vector256.ShuffleNative(serializedVector, Vectors256.ShuffleAlpha);
 
-            scanlineVector.CopyTo(scanline[i..]);
+                scanlineVector.CopyTo(scanline[i..]);
+            }
         }
 
         for(; i < serializedScanline.Length; i += 4) {

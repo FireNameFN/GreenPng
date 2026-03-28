@@ -7,24 +7,26 @@ public static class PaethFiltering {
     public static void Filter(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
         int i = 0;
 
-        Vector128<byte> diagonalScanlineVector = default;
+        if(Vector256.IsHardwareAccelerated && Vector128.IsHardwareAccelerated) {
+            Vector128<byte> diagonalScanlineVector = default;
 
-        Vector128<byte> subScanlineVector = default;
+            Vector128<byte> subScanlineVector = default;
 
-        for(; i < filteredScanline.Length - 15; i += 4) {
-            Vector128<byte> prevScanlineVector = Vector128.Create(prevScanline[i..]);
+            for(; i < filteredScanline.Length - 15; i += 4) {
+                Vector128<byte> prevScanlineVector = Vector128.Create(prevScanline[i..]);
 
-            Vector128<byte> filteredVector = Vector128.Create(filteredScanline[i..]);
+                Vector128<byte> filteredVector = Vector128.Create(filteredScanline[i..]);
 
-            Vector128<byte> scanlineVector = filteredVector;
+                Vector128<byte> scanlineVector = filteredVector;
 
-            scanlineVector += Paeth(subScanlineVector, prevScanlineVector, diagonalScanlineVector) & Vectors.PixelMask128;
+                scanlineVector += Paeth(subScanlineVector, prevScanlineVector, diagonalScanlineVector) & Vectors128.PixelMask;
 
-            scanlineVector.CopyTo(scanline[i..]);
+                scanlineVector.CopyTo(scanline[i..]);
 
-            diagonalScanlineVector = prevScanlineVector;
+                diagonalScanlineVector = prevScanlineVector;
 
-            subScanlineVector = scanlineVector;
+                subScanlineVector = scanlineVector;
+            }
         }
 
         if(i < 1) {

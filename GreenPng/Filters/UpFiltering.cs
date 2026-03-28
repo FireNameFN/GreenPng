@@ -7,14 +7,16 @@ public static class UpFiltering {
     public static void Filter(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
         int i = 0;
 
-        for(; i < filteredScanline.Length - 31; i += 32) {
-            Vector256<byte> prevScanlineVector = Vector256.Create(prevScanline[i..]);
+        if(Vector256.IsHardwareAccelerated) {
+            for(; i < filteredScanline.Length - 31; i += 32) {
+                Vector256<byte> prevScanlineVector = Vector256.Create(prevScanline[i..]);
 
-            Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
+                Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
 
-            Vector256<byte> scanlineVector = filteredVector + prevScanlineVector;
+                Vector256<byte> scanlineVector = filteredVector + prevScanlineVector;
 
-            scanlineVector.CopyTo(scanline[i..]);
+                scanlineVector.CopyTo(scanline[i..]);
+            }
         }
 
         for(; i < filteredScanline.Length; i += 4) {
