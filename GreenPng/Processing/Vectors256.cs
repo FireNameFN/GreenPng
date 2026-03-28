@@ -1,6 +1,6 @@
 using System.Runtime.Intrinsics;
 
-namespace GreenPng;
+namespace GreenPng.Processing;
 
 public static class Vectors256 {
     public static readonly Vector256<byte> Shuffle = Vector256.Create((byte)2, 1, 0, 3, 5, 4, 3, 7, 8, 7, 6, 11, 11, 10, 9, 15, 14, 13, 12, 19, 17, 16, 15, 23, 20, 19, 18, 27, 23, 22, 21, 31);

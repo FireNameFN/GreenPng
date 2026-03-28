@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.Intrinsics;
 
-namespace GreenPng.Filters;
+namespace GreenPng.Processing.Filters;
 
 public static class SubFiltering {
     public static void Filter(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {

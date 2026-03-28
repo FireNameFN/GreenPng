@@ -1,6 +1,6 @@
 using System.Runtime.Intrinsics;
 
-namespace GreenPng;
+namespace GreenPng.Processing;
 
 public static class Vectors128 {
     public static readonly Vector128<byte> PixelMask = Vector128.Create(255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);

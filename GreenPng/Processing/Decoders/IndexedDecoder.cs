@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 
-namespace GreenPng.Decoders;
+namespace GreenPng.Processing.Decoders;
 
 public static class IndexedDecoder {
     public static unsafe void Decode(ReadOnlySpan<byte> palette, ReadOnlySpan<byte> transparency, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
@@ -12,7 +12,7 @@ public static class IndexedDecoder {
 
         Span<byte> lookup = stackalloc byte[1024];
 
-        Deserializer.Deserialize24(palette, lookup);
+        Deserializers.Deserialize24(palette, lookup);
 
         if(transparency.Length > 0)
             DecodeTransparency(transparency, lookup);

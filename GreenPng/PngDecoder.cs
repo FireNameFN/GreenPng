@@ -3,8 +3,9 @@ using System.Buffers;
 using System.IO;
 using System.IO.Compression;
 using GreenBuf;
-using GreenPng.Decoders;
-using GreenPng.Filters;
+using GreenPng.Processing;
+using GreenPng.Processing.Decoders;
+using GreenPng.Processing.Filters;
 
 namespace GreenPng;
 
@@ -178,13 +179,13 @@ public static class PngDecoder {
             switch(header.ImageType) {
                 case ImageType.Greyscale:
                 case ImageType.IndexedColor:
-                    Deserializer.Deserialize8(serializedScanline, filteredScanline);
+                    Deserializers.Deserialize8(serializedScanline, filteredScanline);
                     break;
                 case ImageType.Truecolor:
-                    Deserializer.Deserialize24(serializedScanline, filteredScanline);
+                    Deserializers.Deserialize24(serializedScanline, filteredScanline);
                     break;
                 case ImageType.TruecolorAlpha:
-                    Deserializer.Deserialize32(serializedScanline, filteredScanline);
+                    Deserializers.Deserialize32(serializedScanline, filteredScanline);
                     break;
             }
 

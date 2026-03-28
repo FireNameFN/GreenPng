@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 using System.IO.Hashing;
 using GreenBuf;
 
-namespace GreenPng;
+namespace GreenPng.Processing;
 
 public static class SpanReaderExtensions {
     extension(ref SpanReader reader) {

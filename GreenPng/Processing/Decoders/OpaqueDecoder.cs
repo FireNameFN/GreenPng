@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.Intrinsics;
 
-namespace GreenPng.Decoders;
+namespace GreenPng.Processing.Decoders;
 
 public sealed class OpaqueDecoder {
     public static void Decode(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
