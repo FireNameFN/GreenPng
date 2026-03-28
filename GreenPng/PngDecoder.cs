@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using GreenBuf;
 using GreenPng.Decoders;
+using GreenPng.Filters;
 
 namespace GreenPng;
 
@@ -50,7 +51,7 @@ public static class PngDecoder {
         int pixelBitLength = imageType switch {
             ImageType.Greyscale => bitDepth,
             ImageType.Truecolor => bitDepth * 3,
-            ImageType.IndexedColor => 8,
+            ImageType.IndexedColor => bitDepth,
             ImageType.GreyscaleAlpha => bitDepth * 2,
             ImageType.TruecolorAlpha => bitDepth * 4,
             _ => 0
@@ -149,38 +150,75 @@ public static class PngDecoder {
 
         int stride = header.Width * 4;
 
+        Span<byte> filteredScanline = stackalloc byte[stride];
+
         Span<byte> prevScanline = stackalloc byte[stride];
 
-        for(int y = 0; y < header.Height; y++) {
-            Span<byte> scanline = image.Slice(stride * y, stride);
+        Span<byte> scanline = stackalloc byte[stride];
 
+        Span<byte> decodedScanline = stackalloc byte[stride];
+
+        for(int y = 0; y < header.Height; y++) {
             int filteredOffset = filteredLength * y;
 
             byte type = filteredScanlines[filteredOffset];
 
-            ReadOnlySpan<byte> filteredScanline = filteredScanlines.AsSpan(filteredOffset + 1, header.ScanlineLength);
+            ReadOnlySpan<byte> serializedScanline = filteredScanlines.AsSpan(filteredOffset + 1, header.ScanlineLength);
+
+            switch(header.ImageType) {
+                case ImageType.Greyscale:
+                case ImageType.IndexedColor:
+                    Deserializer.Deserialize8(serializedScanline, filteredScanline);
+                    break;
+                case ImageType.Truecolor:
+                    Deserializer.Deserialize24(serializedScanline, filteredScanline);
+                    break;
+                case ImageType.TruecolorAlpha:
+                    Deserializer.Deserialize32(serializedScanline, filteredScanline);
+                    break;
+            }
+
+            switch(type) {
+                case 0:
+                    scanline = filteredScanline;
+                    break;
+                case 1:
+                    SubFiltering.Filter(filteredScanline, scanline);
+                    break;
+                case 2:
+                    UpFiltering.Filter(prevScanline, filteredScanline, scanline);
+                    break;
+                case 3:
+                    AverageFiltering.Filter(prevScanline, filteredScanline, scanline);
+                    break;
+                case 4:
+                    PaethFiltering.Filter(prevScanline, filteredScanline, scanline);
+                    break;
+            }
 
             switch(header.ImageType) {
                 case ImageType.Greyscale:
                     break;
                 case ImageType.Truecolor:
-                    TruecolorDecoder.Decode(prevScanline, filteredScanline, type, scanline);
+                    TruecolorDecoder.Decode(scanline, decodedScanline);
                     break;
                 case ImageType.IndexedColor:
-                    if(transparency.Length < 1)
-                        IndexedDecoder.Decode2(palette, filteredScanline, scanline);
-                    else
-                        IndexedDecoder.DecodeAlpha(palette, transparency, filteredScanline, scanline);
-
+                    IndexedDecoder.Decode(palette, transparency, scanline, decodedScanline);
                     break;
                 case ImageType.GreyscaleAlpha:
-                    break;
                 case ImageType.TruecolorAlpha:
-                    TruecolorDecoder.DecodeAlpha(prevScanline, filteredScanline, type, scanline);
+                    decodedScanline = scanline;
                     break;
             }
 
+            Span<byte> formattedScanline = image.Slice(stride * y, stride);
+
+            decodedScanline.CopyTo(formattedScanline);
+
+            Span<byte> scanlineSwap = prevScanline;
+
             prevScanline = scanline;
+            scanline = scanlineSwap;
         }
 
         ArrayPool<byte>.Shared.Return(filteredScanlines);

@@ -1,102 +1,72 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
-using GreenPng.Filters;
 
 namespace GreenPng.Decoders;
 
 public static class IndexedDecoder {
-    static readonly Vector256<byte> Shuffle = Vector256.Create((byte)0, 1, 2, 0, 4, 5, 6, 1, 7, 8, 9, 2, 11, 12, 13, 3, 15, 16, 17, 4, 18, 19, 20, 5, 21, 22, 23, 6, 24, 25, 26, 7);
-
-    static readonly Vector256<byte> Mask = Vector256.Create(0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255);
-
-    public static void Decode(ReadOnlySpan<byte> palette, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
+    public static unsafe void Decode(ReadOnlySpan<byte> palette, ReadOnlySpan<byte> transparency, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
         Span<uint> scanlinePixel = MemoryMarshal.Cast<byte, uint>(scanline);
 
-        Span<uint> reversedPalette = stackalloc uint[1024];
+        Span<byte> lookup = stackalloc byte[1024];
 
-        NoneFiltering.Filter(palette, MemoryMarshal.AsBytes(reversedPalette));
+        Deserializer.Deserialize24(palette, lookup);
 
-        for(int x = 0; x < scanlinePixel.Length; x++) {
-            int index = filteredScanline[x];
+        if(transparency.Length > 0)
+            DecodeTransparency(transparency, lookup);
+        else
+            TruecolorDecoder.Decode(lookup, lookup);
 
-            uint pixel = reversedPalette[index];
-
-            scanlinePixel[x] = pixel;
-        }
-    }
-
-    public static unsafe void Decode2(ReadOnlySpan<byte> palette, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
-        Span<uint> scanlinePixel = MemoryMarshal.Cast<byte, uint>(scanline);
-
-        uint* reversedPalette = stackalloc uint[1024];
-
-        NoneFiltering.Filter(palette, MemoryMarshal.AsBytes(new Span<uint>(reversedPalette, 1024)));
-
-        var vdfgdf = new Span<uint>(reversedPalette, 1024);
+        uint* lookupPointer = (uint*)Unsafe.AsPointer(ref lookup[0]);
 
         int i = 0;
 
         for(; i < filteredScanline.Length - 31; i += 8) {
-            Vector64<byte> filteredVector = Vector64.Create(filteredScanline[i..]);
+            Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
 
-            (Vector64<ushort> lower, Vector64<ushort> upper) = Vector64.Widen(filteredVector);
+            Vector256<byte> indexVector = filteredVector & Vectors.MaskMono256;
 
-            (Vector128<uint> lower12, Vector128<uint> upper12) = Vector128.Widen(Vector128.Create(lower, upper));
+            Vector256<uint> scanlineVector = Avx2.GatherVector256(lookupPointer, indexVector.AsInt32(), 4);
 
-            Vector256<uint> indexVector = Vector256.Create(lower12, upper12);
-
-            Vector256<uint> scanlineVector = Avx2.GatherVector256(reversedPalette, indexVector.AsInt32(), 4);
-
-            scanlineVector.CopyTo(scanlinePixel[i..]);
+            scanlineVector.AsByte().CopyTo(scanline[i..]);
         }
 
-        for(; i < scanlinePixel.Length; i++) {
+        for(; i < filteredScanline.Length; i += 4) {
             int index = filteredScanline[i];
 
-            uint pixel = reversedPalette[index];
+            uint pixel = lookupPointer[index];
 
-            pixel |= 0xFF000000;
-
-            scanlinePixel[i] = pixel;
+            Unsafe.As<byte, uint>(ref scanline[i]) = pixel;
         }
     }
 
-    public static void DecodeAlpha(ReadOnlySpan<byte> palette, ReadOnlySpan<byte> transparency, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
-        Span<uint> scanlinePixel = MemoryMarshal.Cast<byte, uint>(scanline);
-
-        Span<uint> reversedPalette = stackalloc uint[1024];
-
-        NoneFiltering.Filter(palette, MemoryMarshal.AsBytes(reversedPalette));
-
-        Span<uint> transparencyPalette = stackalloc uint[1024];
-
-        DecodeTransparency(transparency, transparencyPalette);
-
-        for(int x = 0; x < scanlinePixel.Length; x++) {
-            int index = filteredScanline[x];
-
-            uint pixel = reversedPalette[index];
-
-            uint alpha = transparencyPalette[index];
-
-            scanlinePixel[x] = pixel & 0xFFFFFF | alpha;
-        }
-    }
-
-    static void DecodeTransparency(ReadOnlySpan<byte> transparency, Span<uint> transparencyPalette) {
+    static void DecodeTransparency(ReadOnlySpan<byte> transparency, Span<byte> lookup) {
         int i = 0;
+
+        int offset = 0;
 
         for(; i < transparency.Length - 31; i += 8) {
             Vector256<byte> transparencyVector = Vector256.Create(transparency[i..]);
 
-            Vector256<byte> resultVector = Vector256.ShuffleNative(transparencyVector, Shuffle) & Mask;
+            Vector256<byte> lookupVector = Vector256.Create(lookup[offset..]);
 
-            resultVector.AsUInt32().CopyTo(transparencyPalette[i..]);
+            transparencyVector = Vector256.ShuffleNative(transparencyVector, Vectors.ShuffleMono256);
+
+            lookupVector = Vector256.ConditionalSelect(Vectors.MaskAlpha256, transparencyVector, lookupVector);
+
+            lookupVector.CopyTo(lookup[offset..]);
+
+            offset += 32;
         }
 
-        for(; i < transparency.Length; i++)
-            transparencyPalette[i] = (uint)transparency[i] << 24;
+        offset += 3;
+
+        for(; i < transparency.Length; i++) {
+            lookup[offset] = transparency[i];
+
+            offset += 4;
+        }
     }
 }

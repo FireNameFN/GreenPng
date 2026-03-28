@@ -12,8 +12,6 @@ public class FilteringBenchmarks {
 
     byte[] filtered;
 
-    byte[] filteredAlpha;
-
     byte[] scanline;
 
     uint[] scanline4;
@@ -24,23 +22,11 @@ public class FilteringBenchmarks {
 
         prevScanline4 = MemoryMarshal.Cast<byte, uint>(RandomNumberGenerator.GetBytes(1024 * 4)).ToArray();
 
-        filtered = RandomNumberGenerator.GetBytes(1024 * 3);
-
-        filteredAlpha = RandomNumberGenerator.GetBytes(1024 * 4);
+        filtered = RandomNumberGenerator.GetBytes(1024 * 4);
 
         scanline = new byte[1024 * 4];
 
         scanline4 = new uint[1024];
-    }
-
-    [Benchmark]
-    public void FilterNone() {
-        Filtering.FilterNone(filtered, scanline);
-    }
-
-    [Benchmark]
-    public void FilterNoneVec() {
-        NoneFiltering.Filter(filtered, scanline);
     }
 
     [Benchmark]

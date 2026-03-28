@@ -1,46 +1,25 @@
 using System;
-using GreenPng.Filters;
+using System.Runtime.Intrinsics;
 
 namespace GreenPng.Decoders;
 
 public sealed class TruecolorDecoder {
-    public static void Decode(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, byte type, Span<byte> scanline) {
-        switch(type) {
-            case 0:
-                NoneFiltering.Filter(filteredScanline, scanline);
-                break;
-            case 1:
-                SubFiltering.Filter(filteredScanline, scanline);
-                break;
-            case 2:
-                UpFiltering.Filter(prevScanline, filteredScanline, scanline);
-                break;
-            case 3:
-                AverageFiltering.Filter(prevScanline, filteredScanline, scanline);
-                break;
-            case 4:
-                PaethFiltering.Filter(prevScanline, filteredScanline, scanline);
-                break;
-        }
-    }
+    public static void Decode(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
+        int i = 0;
 
-    public static void DecodeAlpha(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, byte type, Span<byte> scanline) {
-        switch(type) {
-            case 0:
-                NoneFiltering.FilterAlpha(filteredScanline, scanline);
-                break;
-            case 1:
-                SubFiltering.FilterAlpha(filteredScanline, scanline);
-                break;
-            case 2:
-                UpFiltering.FilterAlpha(prevScanline, filteredScanline, scanline);
-                break;
-            case 3:
-                AverageFiltering.FilterAlpha(prevScanline, filteredScanline, scanline);
-                break;
-            case 4:
-                PaethFiltering.FilterAlpha(prevScanline, filteredScanline, scanline);
-                break;
+        for(; i < filteredScanline.Length - 31; i += 32) {
+            Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
+
+            Vector256<byte> scanlineVector = filteredVector | Vectors.MaskAlpha256;
+
+            scanlineVector.CopyTo(scanline[i..]);
+        }
+
+        for(; i < filteredScanline.Length; i += 4) {
+            scanline[i] = filteredScanline[i];
+            scanline[i + 1] = filteredScanline[i + 1];
+            scanline[i + 2] = filteredScanline[i + 2];
+            scanline[i + 3] = 0xFF;
         }
     }
 }

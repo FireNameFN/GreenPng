@@ -7,55 +7,6 @@ public static class PaethFiltering {
     public static void Filter(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
         int i = 0;
 
-        int offset = 0;
-
-        Vector128<byte> diagonalScanlineVector = default;
-
-        Vector128<byte> subScanlineVector = default;
-
-        for(; i < filteredScanline.Length - 15; i += 3) {
-            Vector128<byte> prevScanlineVector = Vector128.Create(prevScanline[offset..]);
-
-            Vector128<byte> filteredVector = Vector128.Create(filteredScanline[i..]);
-
-            Vector128<byte> scanlineVector = Vector128.ShuffleNative(filteredVector, Filtering.Shuffle128);
-
-            scanlineVector += Paeth(subScanlineVector, prevScanlineVector, diagonalScanlineVector) & Filtering.PixelMask128;
-
-            scanlineVector |= Filtering.MaskAlpha128;
-
-            scanlineVector.CopyTo(scanline[offset..]);
-
-            diagonalScanlineVector = prevScanlineVector;
-
-            subScanlineVector = scanlineVector;
-
-            offset += 4;
-        }
-
-        if(i < 1) {
-            scanline[0] = (byte)(filteredScanline[2] + Paeth(0, scanline[0], 0));
-            scanline[1] = (byte)(filteredScanline[1] + Paeth(0, scanline[1], 0));
-            scanline[2] = (byte)(filteredScanline[0] + Paeth(0, scanline[2], 0));
-            scanline[3] = 0xFF;
-
-            i = 3;
-            offset = 4;
-        }
-
-        for(; i < filteredScanline.Length; i += 3) {
-            scanline[offset] = (byte)(filteredScanline[i + 2] + Paeth(scanline[offset - 4], prevScanline[offset], prevScanline[offset - 4]));
-            scanline[offset + 1] = (byte)(filteredScanline[i + 1] + Paeth(scanline[offset - 3], prevScanline[offset + 1], prevScanline[offset - 3]));
-            scanline[offset + 2] = (byte)(filteredScanline[i] + Paeth(scanline[offset - 2], prevScanline[offset + 2], prevScanline[offset - 2]));
-            scanline[offset + 3] = 0xFF;
-
-            offset += 4;
-        }
-    }
-
-    public static void FilterAlpha(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
-        int i = 0;
-
         Vector128<byte> diagonalScanlineVector = default;
 
         Vector128<byte> subScanlineVector = default;
@@ -65,9 +16,9 @@ public static class PaethFiltering {
 
             Vector128<byte> filteredVector = Vector128.Create(filteredScanline[i..]);
 
-            Vector128<byte> scanlineVector = Vector128.ShuffleNative(filteredVector, Filtering.ShuffleAlpha128);
+            Vector128<byte> scanlineVector = filteredVector;
 
-            scanlineVector += Paeth(subScanlineVector, prevScanlineVector, diagonalScanlineVector) & Filtering.PixelMask128;
+            scanlineVector += Paeth(subScanlineVector, prevScanlineVector, diagonalScanlineVector) & Vectors.PixelMask128;
 
             scanlineVector.CopyTo(scanline[i..]);
 
@@ -77,18 +28,18 @@ public static class PaethFiltering {
         }
 
         if(i < 1) {
-            scanline[0] = (byte)(filteredScanline[2] + Paeth(0, scanline[0], 0));
+            scanline[0] = (byte)(filteredScanline[0] + Paeth(0, scanline[0], 0));
             scanline[1] = (byte)(filteredScanline[1] + Paeth(0, scanline[1], 0));
-            scanline[2] = (byte)(filteredScanline[0] + Paeth(0, scanline[2], 0));
+            scanline[2] = (byte)(filteredScanline[2] + Paeth(0, scanline[2], 0));
             scanline[3] = (byte)(filteredScanline[3] + Paeth(0, scanline[3], 0));
 
             i = 4;
         }
 
         for(; i < filteredScanline.Length; i += 4) {
-            scanline[i] = (byte)(filteredScanline[i + 2] + Paeth(scanline[i - 4], prevScanline[i], prevScanline[i - 4]));
+            scanline[i] = (byte)(filteredScanline[i] + Paeth(scanline[i - 4], prevScanline[i], prevScanline[i - 4]));
             scanline[i + 1] = (byte)(filteredScanline[i + 1] + Paeth(scanline[i - 3], prevScanline[i + 1], prevScanline[i - 3]));
-            scanline[i + 2] = (byte)(filteredScanline[i] + Paeth(scanline[i - 2], prevScanline[i + 2], prevScanline[i - 2]));
+            scanline[i + 2] = (byte)(filteredScanline[i + 2] + Paeth(scanline[i - 2], prevScanline[i + 2], prevScanline[i - 2]));
             scanline[i + 3] = (byte)(filteredScanline[i + 3] + Paeth(scanline[i - 1], prevScanline[i + 3], prevScanline[i - 1]));
         }
     }
