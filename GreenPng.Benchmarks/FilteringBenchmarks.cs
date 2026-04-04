@@ -7,36 +7,32 @@ namespace GreenPng.Benchmarks;
 public class FilteringBenchmarks {
     byte[] prevScanline;
 
-    byte[] filtered;
-
     byte[] scanline;
 
     [GlobalSetup]
     public void Setup() {
         prevScanline = RandomNumberGenerator.GetBytes(1024 * 4);
 
-        filtered = RandomNumberGenerator.GetBytes(1024 * 4);
-
-        scanline = new byte[1024 * 4];
+        scanline = RandomNumberGenerator.GetBytes(1024 * 4);
     }
 
     [Benchmark]
-    public void FilterSubVec() {
-        SubFiltering.Filter(filtered, scanline);
+    public void FilterSub() {
+        SubFiltering.Filter(scanline);
     }
 
     [Benchmark]
-    public void FilterUpVec() {
-        UpFiltering.Filter(prevScanline, filtered, scanline);
+    public void FilterUp() {
+        UpFiltering.Filter(prevScanline, scanline);
     }
 
     [Benchmark]
-    public void FilterAverageVec() {
-        AverageFiltering.Filter(prevScanline, filtered, scanline);
+    public void FilterAverage() {
+        AverageFiltering.Filter(prevScanline, scanline);
     }
 
     [Benchmark]
-    public void FilterPaethVec() {
-        PaethFiltering.Filter(prevScanline, filtered, scanline);
+    public void FilterPaeth() {
+        PaethFiltering.Filter(prevScanline, scanline);
     }
 }

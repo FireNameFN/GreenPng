@@ -1,27 +1,20 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 
 namespace GreenPng.Processing.Decoders;
 
 public sealed class OpaqueDecoder {
-    public static void Decode(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
+    public static void Decode(Span<byte> scanline) {
         int i = 0;
 
-        if(Vector256.IsHardwareAccelerated) {
-            for(; i < filteredScanline.Length - 31; i += 32) {
-                Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
+        if(Vector256.IsHardwareAccelerated)
+            for(; i < scanline.Length - 31; i += 32)
+                Unsafe.As<byte, Vector256<byte>>(ref scanline[i]) |= Vectors256.MaskAlpha;
 
-                Vector256<byte> scanlineVector = filteredVector | Vectors256.MaskAlpha;
+        i += 3;
 
-                scanlineVector.CopyTo(scanline[i..]);
-            }
-        }
-
-        for(; i < filteredScanline.Length; i += 4) {
-            scanline[i] = filteredScanline[i];
-            scanline[i + 1] = filteredScanline[i + 1];
-            scanline[i + 2] = filteredScanline[i + 2];
-            scanline[i + 3] = 0xFF;
-        }
+        for(; i < scanline.Length; i += 4)
+            scanline[i] = 0xFF;
     }
 }

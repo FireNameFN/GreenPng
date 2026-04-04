@@ -4,7 +4,7 @@ using System.Runtime.Intrinsics;
 namespace GreenPng.Processing.Filters;
 
 public static class PaethFiltering {
-    public static void Filter(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
+    public static void Filter(ReadOnlySpan<byte> prevScanline, Span<byte> scanline) {
         int i = 0;
 
         if(Vector256.IsHardwareAccelerated && Vector128.IsHardwareAccelerated) {
@@ -12,10 +12,10 @@ public static class PaethFiltering {
 
             Vector128<byte> subScanlineVector = default;
 
-            for(; i < filteredScanline.Length - 15; i += 4) {
+            for(; i < scanline.Length - 15; i += 4) {
                 Vector128<byte> prevScanlineVector = Vector128.Create(prevScanline[i..]);
 
-                Vector128<byte> filteredVector = Vector128.Create(filteredScanline[i..]);
+                Vector128<byte> filteredVector = Vector128.Create(scanline[i..]);
 
                 Vector128<byte> scanlineVector = filteredVector;
 
@@ -30,19 +30,19 @@ public static class PaethFiltering {
         }
 
         if(i < 1) {
-            scanline[0] = (byte)(filteredScanline[0] + Paeth(0, scanline[0], 0));
-            scanline[1] = (byte)(filteredScanline[1] + Paeth(0, scanline[1], 0));
-            scanline[2] = (byte)(filteredScanline[2] + Paeth(0, scanline[2], 0));
-            scanline[3] = (byte)(filteredScanline[3] + Paeth(0, scanline[3], 0));
+            scanline[0] = (byte)(scanline[0] + Paeth(0, scanline[0], 0));
+            scanline[1] = (byte)(scanline[1] + Paeth(0, scanline[1], 0));
+            scanline[2] = (byte)(scanline[2] + Paeth(0, scanline[2], 0));
+            scanline[3] = (byte)(scanline[3] + Paeth(0, scanline[3], 0));
 
             i = 4;
         }
 
-        for(; i < filteredScanline.Length; i += 4) {
-            scanline[i] = (byte)(filteredScanline[i] + Paeth(scanline[i - 4], prevScanline[i], prevScanline[i - 4]));
-            scanline[i + 1] = (byte)(filteredScanline[i + 1] + Paeth(scanline[i - 3], prevScanline[i + 1], prevScanline[i - 3]));
-            scanline[i + 2] = (byte)(filteredScanline[i + 2] + Paeth(scanline[i - 2], prevScanline[i + 2], prevScanline[i - 2]));
-            scanline[i + 3] = (byte)(filteredScanline[i + 3] + Paeth(scanline[i - 1], prevScanline[i + 3], prevScanline[i - 1]));
+        for(; i < scanline.Length; i += 4) {
+            scanline[i] = (byte)(scanline[i] + Paeth(scanline[i - 4], prevScanline[i], prevScanline[i - 4]));
+            scanline[i + 1] = (byte)(scanline[i + 1] + Paeth(scanline[i - 3], prevScanline[i + 1], prevScanline[i - 3]));
+            scanline[i + 2] = (byte)(scanline[i + 2] + Paeth(scanline[i - 2], prevScanline[i + 2], prevScanline[i - 2]));
+            scanline[i + 3] = (byte)(scanline[i + 3] + Paeth(scanline[i - 1], prevScanline[i + 3], prevScanline[i - 1]));
         }
     }
 

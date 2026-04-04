@@ -7,7 +7,7 @@ using System.Runtime.Intrinsics.X86;
 namespace GreenPng.Processing.Decoders;
 
 public static class IndexedDecoder {
-    public static unsafe void Decode(ReadOnlySpan<byte> palette, ReadOnlySpan<byte> transparency, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
+    public static unsafe void Decode(ReadOnlySpan<byte> palette, ReadOnlySpan<byte> transparency, Span<byte> scanline) {
         Span<uint> scanlinePixel = MemoryMarshal.Cast<byte, uint>(scanline);
 
         Span<byte> lookup = stackalloc byte[1024];
@@ -17,15 +17,15 @@ public static class IndexedDecoder {
         if(transparency.Length > 0)
             DecodeTransparency(transparency, lookup);
         else
-            OpaqueDecoder.Decode(lookup, lookup);
+            OpaqueDecoder.Decode(lookup);
 
         uint* lookupPointer = (uint*)Unsafe.AsPointer(ref lookup[0]);
 
         int i = 0;
 
         if(Avx2.IsSupported && Vector256.IsHardwareAccelerated) {
-            for(; i < filteredScanline.Length - 31; i += 32) {
-                Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
+            for(; i < scanline.Length - 31; i += 32) {
+                Vector256<byte> filteredVector = Vector256.Create(scanline[i..]);
 
                 Vector256<byte> indexVector = filteredVector & Vectors256.MaskMono;
 
@@ -35,8 +35,8 @@ public static class IndexedDecoder {
             }
         }
 
-        for(; i < filteredScanline.Length; i += 4) {
-            int index = filteredScanline[i];
+        for(; i < scanline.Length; i += 4) {
+            int index = scanline[i];
 
             uint pixel = lookupPointer[index];
 

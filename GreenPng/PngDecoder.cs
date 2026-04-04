@@ -190,16 +190,16 @@ public static class PngDecoder {
 
             switch(type) {
                 case 1:
-                    SubFiltering.Filter(scanline, scanline);
+                    SubFiltering.Filter(scanline);
                     break;
                 case 2:
-                    UpFiltering.Filter(prevScanline, scanline, scanline);
+                    UpFiltering.Filter(prevScanline, scanline);
                     break;
                 case 3:
-                    AverageFiltering.Filter(prevScanline, scanline, scanline);
+                    AverageFiltering.Filter(prevScanline, scanline);
                     break;
                 case 4:
-                    PaethFiltering.Filter(prevScanline, scanline, scanline);
+                    PaethFiltering.Filter(prevScanline, scanline);
                     break;
             }
 
@@ -209,10 +209,10 @@ public static class PngDecoder {
         switch(header.ImageType) {
             case ImageType.Greyscale:
             case ImageType.Truecolor:
-                OpaqueDecoder.Decode(image, image);
+                OpaqueDecoder.Decode(image);
                 break;
             case ImageType.IndexedColor:
-                IndexedDecoder.Decode(palette, transparency, image, image);
+                IndexedDecoder.Decode(palette, transparency, image);
                 break;
         }
 
