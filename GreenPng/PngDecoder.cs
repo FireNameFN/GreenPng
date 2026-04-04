@@ -33,6 +33,9 @@ public static class PngDecoder {
         if(type != ChunkType.IHDR)
             return false;
 
+        if(chunk.Length < 13)
+            return false;
+
         reader = new(chunk);
 
         int width = reader.GetInt32();
