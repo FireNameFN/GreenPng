@@ -164,13 +164,7 @@ public static class PngDecoder {
 
         int stride = header.Width * 4;
 
-        Span<byte> filteredScanline = stackalloc byte[stride];
-
         Span<byte> prevScanline = stackalloc byte[stride];
-
-        Span<byte> scanline = stackalloc byte[stride];
-
-        Span<byte> decodedScanline = stackalloc byte[stride];
 
         for(int y = 0; y < header.Height; y++) {
             int filteredOffset = filteredLength * y;
@@ -179,59 +173,47 @@ public static class PngDecoder {
 
             ReadOnlySpan<byte> serializedScanline = filteredScanlines.AsSpan(filteredOffset + 1, header.ScanlineLength);
 
+            Span<byte> scanline = image.Slice(stride * y, stride);
+
             switch(header.ImageType) {
                 case ImageType.Greyscale:
                 case ImageType.IndexedColor:
-                    Deserializers.Deserialize8(serializedScanline, filteredScanline);
+                    Deserializers.Deserialize8(serializedScanline, scanline);
                     break;
                 case ImageType.Truecolor:
-                    Deserializers.Deserialize24(serializedScanline, filteredScanline);
+                    Deserializers.Deserialize24(serializedScanline, scanline);
                     break;
                 case ImageType.TruecolorAlpha:
-                    Deserializers.Deserialize32(serializedScanline, filteredScanline);
+                    Deserializers.Deserialize32(serializedScanline, scanline);
                     break;
             }
 
             switch(type) {
-                case 0:
-                    scanline = filteredScanline;
-                    break;
                 case 1:
-                    SubFiltering.Filter(filteredScanline, scanline);
+                    SubFiltering.Filter(scanline, scanline);
                     break;
                 case 2:
-                    UpFiltering.Filter(prevScanline, filteredScanline, scanline);
+                    UpFiltering.Filter(prevScanline, scanline, scanline);
                     break;
                 case 3:
-                    AverageFiltering.Filter(prevScanline, filteredScanline, scanline);
+                    AverageFiltering.Filter(prevScanline, scanline, scanline);
                     break;
                 case 4:
-                    PaethFiltering.Filter(prevScanline, filteredScanline, scanline);
+                    PaethFiltering.Filter(prevScanline, scanline, scanline);
                     break;
             }
-
-            switch(header.ImageType) {
-                case ImageType.Greyscale:
-                case ImageType.Truecolor:
-                    OpaqueDecoder.Decode(scanline, decodedScanline);
-                    break;
-                case ImageType.IndexedColor:
-                    IndexedDecoder.Decode(palette, transparency, scanline, decodedScanline);
-                    break;
-                case ImageType.GreyscaleAlpha:
-                case ImageType.TruecolorAlpha:
-                    decodedScanline = scanline;
-                    break;
-            }
-
-            Span<byte> formattedScanline = image.Slice(stride * y, stride);
-
-            decodedScanline.CopyTo(formattedScanline);
-
-            Span<byte> scanlineSwap = prevScanline;
 
             prevScanline = scanline;
-            scanline = scanlineSwap;
+        }
+
+        switch(header.ImageType) {
+            case ImageType.Greyscale:
+            case ImageType.Truecolor:
+                OpaqueDecoder.Decode(image, image);
+                break;
+            case ImageType.IndexedColor:
+                IndexedDecoder.Decode(palette, transparency, image, image);
+                break;
         }
 
         ArrayPool<byte>.Shared.Return(filteredScanlines);

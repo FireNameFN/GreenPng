@@ -24,7 +24,7 @@ public static class IndexedDecoder {
         int i = 0;
 
         if(Avx2.IsSupported && Vector256.IsHardwareAccelerated) {
-            for(; i < filteredScanline.Length - 31; i += 8) {
+            for(; i < filteredScanline.Length - 31; i += 32) {
                 Vector256<byte> filteredVector = Vector256.Create(filteredScanline[i..]);
 
                 Vector256<byte> indexVector = filteredVector & Vectors256.MaskMono;
