@@ -9,33 +9,34 @@ namespace GreenPng.Benchmarks;
 
 [MemoryDiagnoser(false)]
 public class DecodeBenchmarks {
-    readonly byte[] png = Resources.Truecolor;
+    [ParamsSource(typeof(TestImageDataSource), nameof(TestImageDataSource.GetTestImages))]
+    public TestImage TestImage;
 
     [Benchmark]
     public byte[] DecodeIndexedGreenPng() {
-        PngDecoder.TryDecodeHeader(png, out PngHeader header);
+        PngDecoder.TryDecodeHeader(TestImage.Png, out PngHeader header);
 
         byte[] image = new byte[header.ByteSize];
 
-        PngDecoder.TryDecode(png, header, image);
+        PngDecoder.TryDecode(TestImage.Png, header, image);
 
         return image;
     }
 
     [Benchmark]
     public byte DecodeIndexedGreenPngSpan() {
-        PngDecoder.TryDecodeHeader(png, out PngHeader header);
+        PngDecoder.TryDecodeHeader(TestImage.Png, out PngHeader header);
 
         Span<byte> image = stackalloc byte[header.ByteSize];
 
-        PngDecoder.TryDecode(png, header, image);
+        PngDecoder.TryDecode(TestImage.Png, header, image);
 
         return image[^1];
     }
 
     [Benchmark]
     public byte[] DecodeIndexedImageMagick() {
-        using MagickImage magick = new(png);
+        using MagickImage magick = new(TestImage.Png);
 
         byte[] image = magick.ToByteArray(MagickFormat.Bgra);
 
@@ -44,14 +45,14 @@ public class DecodeBenchmarks {
 
     [Benchmark]
     public byte[] DecodeIndexedStbImageSharp() {
-        byte[] stbImage = StbImageSharp.ImageResult.FromMemory(png, StbImageSharp.ColorComponents.RedGreenBlueAlpha).Data;
+        byte[] stbImage = StbImageSharp.ImageResult.FromMemory(TestImage.Png, StbImageSharp.ColorComponents.RedGreenBlueAlpha).Data;
 
         return stbImage;
     }
 
     [Benchmark]
     public byte[] DecodeIndexedImageSharp() {
-        using Image<Bgra32> sharp = Image.Load<Bgra32>(png);
+        using Image<Bgra32> sharp = Image.Load<Bgra32>(TestImage.Png);
 
         byte[] sharpImage = new byte[sharp.Width * sharp.Height * 4];
 
@@ -62,7 +63,7 @@ public class DecodeBenchmarks {
 
     [Benchmark]
     public byte DecodeIndexedImageSharpSpan() {
-        using Image<Bgra32> sharp = Image.Load<Bgra32>(png);
+        using Image<Bgra32> sharp = Image.Load<Bgra32>(TestImage.Png);
 
         Span<byte> sharpImage = stackalloc byte[sharp.Width * sharp.Height * 4];
 

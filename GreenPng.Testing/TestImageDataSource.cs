@@ -1,6 +1,4 @@
-using GreenPng.Testing;
-
-namespace GreenPng.Tests;
+namespace GreenPng.Testing;
 
 public static class TestImageDataSource {
     static readonly TestImage Greyscale = new("Greyscale", Resources.Greyscale);

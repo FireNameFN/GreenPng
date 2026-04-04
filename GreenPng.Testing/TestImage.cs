@@ -1,4 +1,4 @@
-namespace GreenPng.Tests;
+namespace GreenPng.Testing;
 
 public readonly struct TestImage(string name, byte[] png) {
     public string Name { get; init; } = name;
