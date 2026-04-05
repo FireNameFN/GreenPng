@@ -1,83 +1,77 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 
 namespace GreenPng.Processing.Filters;
 
 public static class PaethFiltering {
-    public static void Filter(ReadOnlySpan<byte> prevScanline, Span<byte> scanline) {
-        int i = 0;
+    public static void Filter(ReadOnlySpan<byte> prevScanline, Span<byte> scanline, int offset) {
+        if(offset == 4 && Ssse3.IsSupported) {
+            FilterSsse3(prevScanline, scanline);
 
-        if(Vector256.IsHardwareAccelerated && Vector128.IsHardwareAccelerated) {
-            Vector128<byte> diagonalScanlineVector = default;
-
-            Vector128<byte> subScanlineVector = default;
-
-            for(; i < scanline.Length - 15; i += 4) {
-                Vector128<byte> prevScanlineVector = Vector128.Create(prevScanline[i..]);
-
-                Vector128<byte> filteredVector = Vector128.Create(scanline[i..]);
-
-                Vector128<byte> scanlineVector = filteredVector;
-
-                scanlineVector += Paeth(subScanlineVector, prevScanlineVector, diagonalScanlineVector) & Vectors128.PixelMask;
-
-                scanlineVector.CopyTo(scanline[i..]);
-
-                diagonalScanlineVector = prevScanlineVector;
-
-                subScanlineVector = scanlineVector;
-            }
+            return;
         }
 
-        if(i < 1) {
-            scanline[0] = (byte)(scanline[0] + Paeth(0, scanline[0], 0));
-            scanline[1] = (byte)(scanline[1] + Paeth(0, scanline[1], 0));
-            scanline[2] = (byte)(scanline[2] + Paeth(0, scanline[2], 0));
-            scanline[3] = (byte)(scanline[3] + Paeth(0, scanline[3], 0));
+        FilterScalar(prevScanline, scanline, offset);
+    }
 
-            i = 4;
-        }
+    public static void FilterSsse3(ReadOnlySpan<byte> prevScanline, Span<byte> scanline) {
+        ReadOnlySpan<int> prevScanlineInt32 = MemoryMarshal.Cast<byte, int>(prevScanline);
 
-        for(; i < scanline.Length; i += 4) {
-            scanline[i] = (byte)(scanline[i] + Paeth(scanline[i - 4], prevScanline[i], prevScanline[i - 4]));
-            scanline[i + 1] = (byte)(scanline[i + 1] + Paeth(scanline[i - 3], prevScanline[i + 1], prevScanline[i - 3]));
-            scanline[i + 2] = (byte)(scanline[i + 2] + Paeth(scanline[i - 2], prevScanline[i + 2], prevScanline[i - 2]));
-            scanline[i + 3] = (byte)(scanline[i + 3] + Paeth(scanline[i - 1], prevScanline[i + 3], prevScanline[i - 1]));
+        Span<int> scanlineInt32 = MemoryMarshal.Cast<byte, int>(scanline);
+
+        Vector128<short> diagonalScanlineVector = default;
+
+        Vector128<short> subScanlineVector = default;
+
+        for(int i = 0; i < prevScanlineInt32.Length; i++) {
+            Vector128<byte> prevScanlineVector = Sse2.ConvertScalarToVector128Int32(prevScanlineInt32[i]).AsByte();
+
+            Vector128<byte> scanlineVector = Sse2.ConvertScalarToVector128Int32(scanlineInt32[i]).AsByte();
+
+            Vector128<short> prevScanlineVectorInt16 = Sse2.UnpackLow(prevScanlineVector, default).AsInt16();
+
+            Vector128<byte> scanlineVectorInt16 = Sse2.UnpackLow(scanlineVector, default);
+
+            subScanlineVector = Sse2.Add(scanlineVectorInt16, PaethSsse3(subScanlineVector, prevScanlineVectorInt16, diagonalScanlineVector).AsByte()).AsInt16();
+
+            diagonalScanlineVector = prevScanlineVectorInt16;
+
+            scanlineInt32[i] = Sse2.ConvertToInt32(Sse2.PackUnsignedSaturate(subScanlineVector, default).AsInt32());
         }
     }
 
-    static Vector128<byte> Paeth(Vector128<byte> a, Vector128<byte> b, Vector128<byte> c) {
-        (Vector128<ushort> a1, Vector128<ushort> a2) = Vector128.Widen(a);
-        (Vector128<ushort> b1, Vector128<ushort> b2) = Vector128.Widen(b);
-        (Vector128<ushort> c1, Vector128<ushort> c2) = Vector128.Widen(c);
+    public static void FilterScalar(ReadOnlySpan<byte> prevScanline, Span<byte> scanline, int offset) {
+        for(int i = 0; i < offset; i++)
+            scanline[i] += Paeth(0, prevScanline[i], 0);
 
-        Vector256<short> sa = Vector256.Create(a1.AsInt16(), a2.AsInt16());
-        Vector256<short> sb = Vector256.Create(b1.AsInt16(), b2.AsInt16());
-        Vector256<short> sc = Vector256.Create(c1.AsInt16(), c2.AsInt16());
+        for(int i = offset; i < scanline.Length; i++)
+            scanline[i] += Paeth(scanline[i - offset], prevScanline[i], prevScanline[i - offset]);
+    }
 
-        Vector256<short> pa = sb - sc;
+    static Vector128<short> PaethSsse3(Vector128<short> a, Vector128<short> b, Vector128<short> c) {
+        Vector128<short> pa = Sse2.Subtract(b, c);
 
-        Vector256<short> pb = sa - sc;
+        Vector128<short> pb = Sse2.Subtract(a, c);
 
-        Vector256<short> pc = Vector256.Abs(pa + pb);
+        Vector128<short> pc = Ssse3.Abs(Sse2.Add(pa, pb)).AsInt16();
 
-        pa = Vector256.Abs(pa);
+        pa = Ssse3.Abs(pa).AsInt16();
 
-        pb = Vector256.Abs(pb);
+        pb = Ssse3.Abs(pb).AsInt16();
 
-        Vector256<short> mina = Vector256.LessThanOrEqual(pa, pb) & Vector256.LessThanOrEqual(pa, pc);
+        Vector128<short> min = Sse2.Min(pa, Sse2.Min(pb, pc));
 
-        Vector256<short> minb = Vector256.LessThanOrEqual(pb, pc);
+        Vector128<short> minb = Sse2.CompareEqual(pb, min);
 
-        Vector128<byte> maska = Vector128.Narrow(mina.GetLower(), mina.GetUpper()).AsByte();
+        Vector128<short> bc = Sse2.Xor(c, Sse2.And(minb, Sse2.Xor(b, c)));
 
-        Vector128<byte> maskb = Vector128.Narrow(minb.GetLower(), minb.GetUpper()).AsByte();
+        Vector128<short> mina = Sse2.CompareEqual(pa, min);
 
-        maskb = Vector128.AndNot(maskb, maska);
+        Vector128<short> abc = Sse2.Xor(bc, Sse2.And(mina, Sse2.Xor(a, bc)));
 
-        Vector128<byte> maskc = Vector128.OnesComplement(maska | maskb);
-
-        return a & maska | b & maskb | c & maskc;
+        return abc;
     }
 
     static byte Paeth(byte a, byte b, byte c) {

@@ -16,11 +16,7 @@ public static class UpFiltering {
             }
         }
 
-        for(; i < scanline.Length; i += 4) {
-            scanline[i] = (byte)(scanline[i] + prevScanline[i]);
-            scanline[i + 1] = (byte)(scanline[i + 1] + prevScanline[i + 1]);
-            scanline[i + 2] = (byte)(scanline[i + 2] + prevScanline[i + 2]);
-            scanline[i + 3] = (byte)(scanline[i + 3] + prevScanline[i + 3]);
-        }
+        for(; i < scanline.Length; i++)
+            scanline[i] += prevScanline[i];
     }
 }

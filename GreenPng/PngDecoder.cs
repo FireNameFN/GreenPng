@@ -155,8 +155,11 @@ public static class PngDecoder {
             while(offset < filteredScanlinesLength) {
                 int length = stream.Read(filteredScanlines.AsSpan(offset));
 
-                if(length == 0)
+                if(length == 0) {
+                    ArrayPool<byte>.Shared.Return(filteredScanlines);
+
                     return false;
+                }
 
                 offset += length;
             }
@@ -190,16 +193,16 @@ public static class PngDecoder {
 
             switch(type) {
                 case 1:
-                    SubFiltering.Filter(scanline);
+                    SubFiltering.Filter(scanline, 4);
                     break;
                 case 2:
                     UpFiltering.Filter(prevScanline, scanline);
                     break;
                 case 3:
-                    AverageFiltering.Filter(prevScanline, scanline);
+                    AverageFiltering.Filter(prevScanline, scanline, 4);
                     break;
                 case 4:
-                    PaethFiltering.Filter(prevScanline, scanline);
+                    PaethFiltering.Filter(prevScanline, scanline, 4);
                     break;
             }
 

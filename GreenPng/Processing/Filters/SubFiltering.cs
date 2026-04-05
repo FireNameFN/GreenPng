@@ -1,41 +1,37 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 
 namespace GreenPng.Processing.Filters;
 
 public static class SubFiltering {
-    public static void Filter(Span<byte> scanline) {
-        int i = 0;
+    public static void Filter(Span<byte> scanline, int offset) {
+        if(offset == 4 && Sse2.IsSupported) {
+            FilterSse2(scanline);
 
-        if(Vector256.IsHardwareAccelerated) {
-            Vector256<byte> subScanlineVector = default;
-
-            for(; i < scanline.Length - 31; i += 32) {
-                Vector256<byte> filteredVector = Vector256.Create(scanline[i..]);
-
-                Vector256<byte> scanlineVector = filteredVector + subScanlineVector;
-
-                for(int j = 0; j < 3; j++) {
-                    Vector256<byte> shift = Vectors256.ShiftArray[j];
-                    Vector256<byte> mask = Vectors256.ShiftMaskArray[j];
-
-                    scanlineVector += Vector256.ShuffleNative(scanlineVector, shift) & mask;
-                }
-
-                subScanlineVector = Vector256.ShuffleNative(scanlineVector, Vectors256.LastShift) & Vectors256.LastShiftMask;
-
-                scanlineVector.CopyTo(scanline[i..]);
-            }
+            return;
         }
 
-        if(i < 1)
-            i = 4;
+        FilterScalar(scanline, offset);
+    }
 
-        for(; i < scanline.Length; i += 4) {
-            scanline[i] = (byte)(scanline[i] + scanline[i - 4]);
-            scanline[i + 1] = (byte)(scanline[i + 1] + scanline[i - 3]);
-            scanline[i + 2] = (byte)(scanline[i + 2] + scanline[i - 2]);
-            scanline[i + 3] = (byte)(scanline[i + 3] + scanline[i - 1]);
+    public static void FilterSse2(Span<byte> scanline) {
+        Span<int> scanlineInt32 = MemoryMarshal.Cast<byte, int>(scanline);
+
+        Vector128<byte> subScanlineVector = default;
+
+        for(int i = 0; i < scanlineInt32.Length; i++) {
+            Vector128<byte> scanlineVector = Sse2.ConvertScalarToVector128Int32(scanlineInt32[i]).AsByte();
+
+            subScanlineVector = Sse2.Add(scanlineVector, subScanlineVector);
+
+            scanlineInt32[i] = Sse2.ConvertToInt32(subScanlineVector.AsInt32());
         }
+    }
+
+    public static void FilterScalar(Span<byte> scanline, int offset) {
+        for(int i = 4; i < scanline.Length; i++)
+            scanline[i] += scanline[i - offset];
     }
 }
