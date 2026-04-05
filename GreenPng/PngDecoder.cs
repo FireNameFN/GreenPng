@@ -81,43 +81,43 @@ public static class PngDecoder {
         return true;
     }
 
-    public static bool TryDecode(ReadOnlySpan<byte> png, PngHeader header, Span<byte> image) {
-        SpanReader reader = new(png[HeaderLength..]);
+    public static unsafe bool TryDecode(ReadOnlySpan<byte> png, PngHeader header, Span<byte> image) {
+        png = png[HeaderLength..];
 
-        byte[] data = ArrayPool<byte>.Shared.Rent(reader.Length);
+        fixed(byte* buffer = png) {
+            SpanReader reader = new(png);
 
-        SpanWriter writer = new(data);
+            SegmentStream data = new(buffer);
 
-        scoped ReadOnlySpan<byte> palette = default;
+            int offset = 8;
 
-        scoped ReadOnlySpan<byte> transparency = default;
+            scoped ReadOnlySpan<byte> palette = default;
 
-        while(reader.TryGetChunk(out ChunkType type, out ReadOnlySpan<byte> chunk)) {
-            switch(type) {
-                case ChunkType.PLTE:
-                    palette = chunk;
+            scoped ReadOnlySpan<byte> transparency = default;
 
-                    break;
-                case ChunkType.tRNS:
-                    transparency = chunk;
+            while(reader.TryGetChunk(out ChunkType type, out ReadOnlySpan<byte> chunk)) {
+                switch(type) {
+                    case ChunkType.PLTE:
+                        palette = chunk;
 
-                    break;
-                case ChunkType.IDAT:
-                    writer.Write(chunk);
+                        break;
+                    case ChunkType.tRNS:
+                        transparency = chunk;
 
-                    break;
-                case ChunkType.IEND:
-                    bool success = TryDecodeData(header, palette, transparency, data, image);
+                        break;
+                    case ChunkType.IDAT:
+                        data.Add(offset, chunk.Length);
 
-                    ArrayPool<byte>.Shared.Return(data);
+                        break;
+                    case ChunkType.IEND:
+                        return TryDecodeData(header, palette, transparency, data, image);
+                }
 
-                    return success;
+                offset += chunk.Length + 12;
             }
+
+            return false;
         }
-
-        ArrayPool<byte>.Shared.Return(data);
-
-        return false;
     }
 
     public static PngHeader DecodeHeader(ReadOnlySpan<byte> png) {
@@ -142,14 +142,14 @@ public static class PngDecoder {
         return image;
     }
 
-    static bool TryDecodeData(PngHeader header, ReadOnlySpan<byte> palette, ReadOnlySpan<byte> transparency, byte[] data, Span<byte> image) {
+    static bool TryDecodeData(PngHeader header, ReadOnlySpan<byte> palette, ReadOnlySpan<byte> transparency, Stream data, Span<byte> image) {
         int filteredLength = header.ScanlineLength + 1;
 
         int filteredScanlinesLength = filteredLength * header.Height;
 
         byte[] filteredScanlines = ArrayPool<byte>.Shared.Rent(filteredScanlinesLength);
 
-        using(ZLibStream stream = new(new MemoryStream(data), CompressionMode.Decompress)) {
+        using(ZLibStream stream = new(data, CompressionMode.Decompress)) {
             int offset = 0;
 
             while(offset < filteredScanlinesLength) {
