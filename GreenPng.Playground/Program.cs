@@ -2,7 +2,7 @@
 using GreenPng;
 using GreenPng.Testing;
 
-byte[] png = Resources.TruecolorAlpha;
+byte[] png = Resources.Greyscale;
 
 PngDecoder.TryDecodeHeader(png, out PngHeader header);
 
@@ -18,6 +18,10 @@ Span<byte> span = stackalloc byte[header.ByteSize];
 
 bool result = PngDecoder.TryDecode(png, header, span);
 
-result = PngDecoder.TryDecode(png, header, span);
+result = Decode(span);
 
 Console.WriteLine(result);
+
+bool Decode(Span<byte> span) {
+    return PngDecoder.TryDecode(png, header, span);
+}

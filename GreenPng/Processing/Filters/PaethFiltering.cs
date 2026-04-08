@@ -6,29 +6,31 @@ using System.Runtime.Intrinsics.X86;
 namespace GreenPng.Processing.Filters;
 
 public static class PaethFiltering {
-    public static void Filter(ReadOnlySpan<byte> prevScanline, Span<byte> scanline, int offset) {
+    public static void Filter(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline, int offset) {
         if(offset == 4 && Ssse3.IsSupported) {
-            FilterSsse3(prevScanline, scanline);
+            FilterSsse3(prevScanline, filteredScanline, scanline);
 
             return;
         }
 
-        FilterScalar(prevScanline, scanline, offset);
+        FilterScalar(prevScanline, filteredScanline, scanline, offset);
     }
 
-    public static void FilterSsse3(ReadOnlySpan<byte> prevScanline, Span<byte> scanline) {
-        ReadOnlySpan<int> prevScanlineInt32 = MemoryMarshal.Cast<byte, int>(prevScanline);
+    public static void FilterSsse3(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
+        ReadOnlySpan<uint> prevScanline32 = MemoryMarshal.Cast<byte, uint>(prevScanline);
 
-        Span<int> scanlineInt32 = MemoryMarshal.Cast<byte, int>(scanline);
+        ReadOnlySpan<uint> filteredScanline32 = MemoryMarshal.Cast<byte, uint>(filteredScanline);
+
+        Span<uint> scanline32 = MemoryMarshal.Cast<byte, uint>(scanline);
 
         Vector128<short> diagonalScanlineVector = default;
 
         Vector128<short> subScanlineVector = default;
 
-        for(int i = 0; i < prevScanlineInt32.Length; i++) {
-            Vector128<byte> prevScanlineVector = Sse2.ConvertScalarToVector128Int32(prevScanlineInt32[i]).AsByte();
+        for(int i = 0; i < scanline32.Length; i++) {
+            Vector128<byte> prevScanlineVector = Sse2.ConvertScalarToVector128UInt32(prevScanline32[i]).AsByte();
 
-            Vector128<byte> scanlineVector = Sse2.ConvertScalarToVector128Int32(scanlineInt32[i]).AsByte();
+            Vector128<byte> scanlineVector = Sse2.ConvertScalarToVector128UInt32(filteredScanline32[i]).AsByte();
 
             Vector128<short> prevScanlineVectorInt16 = Sse2.UnpackLow(prevScanlineVector, default).AsInt16();
 
@@ -38,16 +40,16 @@ public static class PaethFiltering {
 
             diagonalScanlineVector = prevScanlineVectorInt16;
 
-            scanlineInt32[i] = Sse2.ConvertToInt32(Sse2.PackUnsignedSaturate(subScanlineVector, default).AsInt32());
+            scanline32[i] = Sse2.ConvertToUInt32(Sse2.PackUnsignedSaturate(subScanlineVector, default).AsUInt32());
         }
     }
 
-    public static void FilterScalar(ReadOnlySpan<byte> prevScanline, Span<byte> scanline, int offset) {
+    public static void FilterScalar(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline, int offset) {
         for(int i = 0; i < offset; i++)
-            scanline[i] += Paeth(0, prevScanline[i], 0);
+            scanline[i] = (byte)(filteredScanline[i] + Paeth(0, prevScanline[i], 0));
 
         for(int i = offset; i < scanline.Length; i++)
-            scanline[i] += Paeth(scanline[i - offset], prevScanline[i], prevScanline[i - offset]);
+            scanline[i] = (byte)(filteredScanline[i] + Paeth(scanline[i - offset], prevScanline[i], prevScanline[i - offset]));
     }
 
     static Vector128<short> PaethSsse3(Vector128<short> a, Vector128<short> b, Vector128<short> c) {

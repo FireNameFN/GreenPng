@@ -6,6 +6,7 @@ using GreenBuf;
 using GreenPng.Processing;
 using GreenPng.Processing.Decoders;
 using GreenPng.Processing.Filters;
+using GreenPng.Processing.Unpackers;
 
 namespace GreenPng;
 
@@ -165,61 +166,86 @@ public static class PngDecoder {
             }
         }
 
-        int stride = header.Width * 4;
+        int filterOffset = header.ImageType switch {
+            ImageType.Greyscale => 1,
+            ImageType.Truecolor => 4,
+            ImageType.IndexedColor => 1,
+            ImageType.GreyscaleAlpha => 4,
+            ImageType.TruecolorAlpha => 4,
+            _ => 4
+        };
+
+        int stride = header.Width * filterOffset;
+
+        int imageOffset = (header.Width * 4 - stride) * header.Height;
+
+        Span<byte> encodedImage = image[imageOffset..];
 
         Span<byte> prevScanline = stackalloc byte[stride];
+
+        prevScanline.Clear();
 
         for(int y = 0; y < header.Height; y++) {
             int filteredOffset = filteredLength * y;
 
             byte type = filteredScanlines[filteredOffset];
 
-            ReadOnlySpan<byte> serializedScanline = filteredScanlines.AsSpan(filteredOffset + 1, header.ScanlineLength);
+            Span<byte> filteredScanline = filteredScanlines.AsSpan(filteredOffset + 1, header.ScanlineLength);
 
-            Span<byte> scanline = image.Slice(stride * y, stride);
+            Span<byte> scanline = encodedImage.Slice(stride * y, stride);
 
             switch(header.ImageType) {
-                case ImageType.Greyscale:
-                case ImageType.IndexedColor:
-                    Deserializers.Deserialize8(serializedScanline, scanline);
-                    break;
                 case ImageType.Truecolor:
-                    Deserializers.Deserialize24(serializedScanline, scanline);
-                    break;
-                case ImageType.TruecolorAlpha:
-                    Deserializers.Deserialize32(serializedScanline, scanline);
+                    TruecolorUnpacker.Unpack(filteredScanline, scanline);
+
+                    if(type == 0) {
+                        prevScanline = scanline;
+
+                        continue;
+                    }
+
+                    filteredScanline = scanline;
+
                     break;
             }
 
             switch(type) {
+                case 0:
+                    filteredScanline.CopyTo(scanline);
+                    break;
                 case 1:
-                    SubFiltering.Filter(scanline, 4);
+                    SubFiltering.Filter(filteredScanline, scanline, filterOffset);
                     break;
                 case 2:
-                    UpFiltering.Filter(prevScanline, scanline);
+                    UpFiltering.Filter(prevScanline, filteredScanline, scanline);
                     break;
                 case 3:
-                    AverageFiltering.Filter(prevScanline, scanline, 4);
+                    AverageFiltering.Filter(prevScanline, filteredScanline, scanline, filterOffset);
                     break;
                 case 4:
-                    PaethFiltering.Filter(prevScanline, scanline, 4);
+                    PaethFiltering.Filter(prevScanline, filteredScanline, scanline, filterOffset);
                     break;
             }
 
             prevScanline = scanline;
         }
 
+        ArrayPool<byte>.Shared.Return(filteredScanlines);
+
         switch(header.ImageType) {
             case ImageType.Greyscale:
+                GreyscaleDecoder.Decode(encodedImage, image);
+                break;
             case ImageType.Truecolor:
-                OpaqueDecoder.Decode(image);
+                TruecolorDecoder.Decode(image);
                 break;
             case ImageType.IndexedColor:
-                IndexedDecoder.Decode(palette, transparency, image);
+                IndexedDecoder.Decode(palette, transparency, encodedImage, image);
+                break;
+            case ImageType.TruecolorAlpha:
+                TruecolorAlphaDecoder.Decode(image);
                 break;
         }
-
-        ArrayPool<byte>.Shared.Return(filteredScanlines);
 
         return true;
     }

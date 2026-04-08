@@ -6,27 +6,29 @@ using System.Runtime.Intrinsics.X86;
 namespace GreenPng.Processing.Filters;
 
 public static class AverageFiltering {
-    public static void Filter(ReadOnlySpan<byte> prevScanline, Span<byte> scanline, int offset) {
+    public static void Filter(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline, int offset) {
         if(offset == 4 && Sse2.IsSupported) {
-            FilterSse2(prevScanline, scanline);
+            FilterSse2(prevScanline, filteredScanline, scanline);
 
             return;
         }
 
-        FilterScalar(prevScanline, scanline, offset);
+        FilterScalar(prevScanline, filteredScanline, scanline, offset);
     }
 
-    public static void FilterSse2(ReadOnlySpan<byte> prevScanline, Span<byte> scanline) {
-        ReadOnlySpan<int> prevScanlineInt32 = MemoryMarshal.Cast<byte, int>(prevScanline);
+    public static void FilterSse2(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
+        ReadOnlySpan<uint> prevScanline32 = MemoryMarshal.Cast<byte, uint>(prevScanline);
 
-        Span<int> scanlineInt32 = MemoryMarshal.Cast<byte, int>(scanline);
+        ReadOnlySpan<uint> filteredScanline32 = MemoryMarshal.Cast<byte, uint>(filteredScanline);
+
+        Span<uint> scanline32 = MemoryMarshal.Cast<byte, uint>(scanline);
 
         Vector128<byte> subScanlineVector = default;
 
-        for(int i = 0; i < scanlineInt32.Length; i++) {
-            Vector128<byte> prevScanlineVector = Sse2.ConvertScalarToVector128Int32(prevScanlineInt32[i]).AsByte();
+        for(int i = 0; i < scanline32.Length; i++) {
+            Vector128<byte> prevScanlineVector = Sse2.ConvertScalarToVector128UInt32(prevScanline32[i]).AsByte();
 
-            Vector128<byte> scanlineVector = Sse2.ConvertScalarToVector128Int32(scanlineInt32[i]).AsByte();
+            Vector128<byte> scanlineVector = Sse2.ConvertScalarToVector128UInt32(filteredScanline32[i]).AsByte();
 
             Vector128<byte> average = Sse2.Average(prevScanlineVector, subScanlineVector);
 
@@ -34,15 +36,15 @@ public static class AverageFiltering {
 
             subScanlineVector = Sse2.Add(scanlineVector, Sse2.Subtract(average, over));
 
-            scanlineInt32[i] = Sse2.ConvertToInt32(subScanlineVector.AsInt32());
+            scanline32[i] = Sse2.ConvertToUInt32(subScanlineVector.AsUInt32());
         }
     }
 
-    public static void FilterScalar(ReadOnlySpan<byte> prevScanline, Span<byte> scanline, int offset) {
+    public static void FilterScalar(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline, int offset) {
         for(int i = 0; i < offset; i++)
-            scanline[i] = (byte)(scanline[i] + scanline[i] / 2);
+            scanline[i] = (byte)(filteredScanline[i] + prevScanline[i] / 2);
 
         for(int i = offset; i < scanline.Length; i++)
-            scanline[i] = (byte)(scanline[i] + (scanline[i - offset] + prevScanline[i]) / 2);
+            scanline[i] = (byte)(filteredScanline[i] + (scanline[i - offset] + prevScanline[i]) / 2);
     }
 }

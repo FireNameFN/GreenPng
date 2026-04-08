@@ -1,0 +1,116 @@
+| Method                      | TestImage        | Mean         | Error      | StdDev     | Allocated |
+|---------------------------- |----------------- |-------------:|-----------:|-----------:|----------:|
+| DecodeIndexedGreenPng       | Greyscale        |    222.79 us |   0.955 us |   0.798 us |  201797 B |
+| DecodeIndexedGreenPngSpan   | Greyscale        |    215.18 us |   1.972 us |   1.748 us |     384 B |
+| DecodeIndexedImageMagick    | Greyscale        |  1,008.30 us |  19.822 us |  33.659 us |  206173 B |
+| DecodeIndexedStbImageSharp  | Greyscale        |    321.04 us |   6.305 us |   7.261 us |  202024 B |
+| DecodeIndexedImageSharp     | Greyscale        |    359.30 us |   5.903 us |   5.522 us |  204738 B |
+| DecodeIndexedImageSharpSpan | Greyscale        |    265.27 us |   4.575 us |   4.895 us |    3450 B |
+| DecodeIndexedGreenPng       | Indexed          |     48.28 us |   0.949 us |   1.130 us |   65944 B |
+| DecodeIndexedGreenPngSpan   | Indexed          |     46.84 us |   0.585 us |   0.547 us |     384 B |
+| DecodeIndexedImageMagick    | Indexed          |    364.55 us |   6.000 us |   7.143 us |   70108 B |
+| DecodeIndexedStbImageSharp  | Indexed          |     63.44 us |   0.380 us |   0.337 us |   69056 B |
+| DecodeIndexedImageSharp     | Indexed          |    120.91 us |   1.834 us |   1.715 us |   73781 B |
+| DecodeIndexedImageSharpSpan | Indexed          |    118.10 us |   1.590 us |   1.410 us |    8155 B |
+| DecodeIndexedGreenPng       | Indexed Alpha    |     47.06 us |   0.218 us |   0.204 us |   65944 B |
+| DecodeIndexedGreenPngSpan   | Indexed Alpha    |     46.95 us |   0.489 us |   0.457 us |     384 B |
+| DecodeIndexedImageMagick    | Indexed Alpha    |    608.84 us |   8.564 us |   7.592 us |   70114 B |
+| DecodeIndexedStbImageSharp  | Indexed Alpha    |     65.06 us |   0.932 us |   0.872 us |   69056 B |
+| DecodeIndexedImageSharp     | Indexed Alpha    |    226.97 us |   0.269 us |   0.239 us |   81824 B |
+| DecodeIndexedImageSharpSpan | Indexed Alpha    |    215.23 us |   0.999 us |   0.834 us |   16193 B |
+| DecodeIndexedGreenPng       | Indexed Filtered |    123.12 us |   0.795 us |   0.705 us |  181468 B |
+| DecodeIndexedGreenPngSpan   | Indexed Filtered |    113.79 us |   0.053 us |   0.047 us |     384 B |
+| DecodeIndexedImageMagick    | Indexed Filtered |    705.53 us |   3.772 us |   3.529 us |  185809 B |
+| DecodeIndexedStbImageSharp  | Indexed Filtered |    207.40 us |   1.072 us |   0.950 us |  182122 B |
+| DecodeIndexedImageSharp     | Indexed Filtered |    304.52 us |   1.596 us |   1.414 us |  189465 B |
+| DecodeIndexedImageSharpSpan | Indexed Filtered |    264.62 us |   0.293 us |   0.229 us |    8460 B |
+| DecodeIndexedGreenPng       | Truecolor        |  9,530.28 us |  74.126 us |  69.337 us | 4196178 B |
+| DecodeIndexedGreenPngSpan   | Truecolor        |  9,179.31 us |  11.348 us |  10.615 us |     384 B |
+| DecodeIndexedImageMagick    | Truecolor        | 25,989.37 us | 377.718 us | 334.837 us | 4200890 B |
+| DecodeIndexedStbImageSharp  | Truecolor        | 28,226.55 us | 196.198 us | 163.834 us | 6132054 B |
+| DecodeIndexedImageSharp     | Truecolor        | 14,309.66 us | 281.071 us | 312.410 us | 4202045 B |
+| DecodeIndexedImageSharpSpan | Truecolor        | 13,951.59 us |  50.660 us |  47.388 us |    6237 B |
+| DecodeIndexedGreenPng       | Truecolor Alpha  |  2,305.64 us |  15.069 us |  11.765 us | 4196153 B |
+| DecodeIndexedGreenPngSpan   | Truecolor Alpha  |  1,863.60 us |  22.369 us |  24.863 us |     624 B |
+| DecodeIndexedImageMagick    | Truecolor Alpha  | 20,668.89 us | 231.590 us | 216.630 us | 4200740 B |
+| DecodeIndexedStbImageSharp  | Truecolor Alpha  | 12,827.11 us | 251.067 us | 289.129 us | 4211060 B |
+| DecodeIndexedImageSharp     | Truecolor Alpha  |  2,739.18 us |  54.694 us | 107.960 us | 4200648 B |
+| DecodeIndexedImageSharpSpan | Truecolor Alpha  |  2,402.18 us |  68.597 us | 200.101 us |    4799 B |
+
+| Method                      | TestImage        | Mean         | Error      | StdDev    | Allocated |
+|---------------------------- |----------------- |-------------:|-----------:|----------:|----------:|
+| DecodeIndexedGreenPng       | Greyscale        |    242.07 us |   3.998 us |  3.544 us |  201797 B |
+| DecodeIndexedGreenPngSpan   | Greyscale        |    229.13 us |   2.667 us |  2.495 us |     384 B |
+| DecodeIndexedImageMagick    | Greyscale        |    957.60 us |   5.549 us |  4.332 us |  206193 B |
+| DecodeIndexedStbImageSharp  | Greyscale        |    296.64 us |   3.822 us |  3.575 us |  202024 B |
+| DecodeIndexedImageSharp     | Greyscale        |    347.70 us |   5.728 us |  5.358 us |  204724 B |
+| DecodeIndexedImageSharpSpan | Greyscale        |    294.00 us |   1.245 us |  1.164 us |    3450 B |
+| DecodeIndexedGreenPng       | Indexed          |     33.85 us |   0.198 us |  0.186 us |   65944 B |
+| DecodeIndexedGreenPngSpan   | Indexed          |     34.02 us |   0.189 us |  0.177 us |     384 B |
+| DecodeIndexedImageMagick    | Indexed          |    362.03 us |   1.017 us |  0.952 us |   70108 B |
+| DecodeIndexedStbImageSharp  | Indexed          |     62.10 us |   0.226 us |  0.212 us |   69056 B |
+| DecodeIndexedImageSharp     | Indexed          |    115.86 us |   0.361 us |  0.301 us |   73781 B |
+| DecodeIndexedImageSharpSpan | Indexed          |    114.85 us |   0.314 us |  0.294 us |    8155 B |
+| DecodeIndexedGreenPng       | Indexed Alpha    |     34.13 us |   0.133 us |  0.125 us |   65944 B |
+| DecodeIndexedGreenPngSpan   | Indexed Alpha    |     33.98 us |   0.177 us |  0.165 us |     384 B |
+| DecodeIndexedImageMagick    | Indexed Alpha    |    589.12 us |   2.288 us |  2.140 us |   70114 B |
+| DecodeIndexedStbImageSharp  | Indexed Alpha    |     63.39 us |   0.239 us |  0.200 us |   69056 B |
+| DecodeIndexedImageSharp     | Indexed Alpha    |    223.38 us |   0.638 us |  0.597 us |   81824 B |
+| DecodeIndexedImageSharpSpan | Indexed Alpha    |    220.43 us |   0.265 us |  0.221 us |   16193 B |
+| DecodeIndexedGreenPng       | Indexed Filtered |     95.70 us |   0.785 us |  0.734 us |  181466 B |
+| DecodeIndexedGreenPngSpan   | Indexed Filtered |     85.27 us |   0.630 us |  0.589 us |     384 B |
+| DecodeIndexedImageMagick    | Indexed Filtered |    696.61 us |   3.263 us |  3.053 us |  185780 B |
+| DecodeIndexedStbImageSharp  | Indexed Filtered |    204.03 us |   0.814 us |  0.762 us |  182118 B |
+| DecodeIndexedImageSharp     | Indexed Filtered |    293.33 us |   2.051 us |  1.919 us |  189454 B |
+| DecodeIndexedImageSharpSpan | Indexed Filtered |    257.66 us |   1.323 us |  1.238 us |    8460 B |
+| DecodeIndexedGreenPng       | Truecolor        |  9,161.91 us |  41.700 us | 39.006 us | 4196164 B |
+| DecodeIndexedGreenPngSpan   | Truecolor        |  8,856.86 us |  54.373 us | 50.860 us |     384 B |
+| DecodeIndexedImageMagick    | Truecolor        | 25,383.54 us |  69.285 us | 64.810 us | 4200740 B |
+| DecodeIndexedStbImageSharp  | Truecolor        | 27,097.61 us |  95.483 us | 89.315 us | 6132054 B |
+| DecodeIndexedImageSharp     | Truecolor        | 13,768.52 us |  49.787 us | 44.135 us | 4202045 B |
+| DecodeIndexedImageSharpSpan | Truecolor        | 13,217.01 us |  69.023 us | 61.187 us |    6237 B |
+| DecodeIndexedGreenPng       | Truecolor Alpha  |  2,403.97 us |  25.341 us | 23.704 us | 4196227 B |
+| DecodeIndexedGreenPngSpan   | Truecolor Alpha  |  1,819.37 us |   6.817 us |  6.377 us |     624 B |
+| DecodeIndexedImageMagick    | Truecolor Alpha  | 19,664.11 us | 105.212 us | 98.415 us | 4200740 B |
+| DecodeIndexedStbImageSharp  | Truecolor Alpha  | 13,040.72 us |  60.100 us | 56.217 us | 4211060 B |
+| DecodeIndexedImageSharp     | Truecolor Alpha  |  2,506.01 us |  11.594 us |  9.681 us | 4200648 B |
+| DecodeIndexedImageSharpSpan | Truecolor Alpha  |  2,042.39 us |  13.401 us | 11.880 us |    4799 B |
+
+| Method                      | TestImage        | Mean         | Error      | StdDev     | Allocated |
+|---------------------------- |----------------- |-------------:|-----------:|-----------:|----------:|
+| DecodeIndexedGreenPng       | Greyscale        |    235.43 us |   1.592 us |   1.330 us |  201797 B |
+| DecodeIndexedGreenPngSpan   | Greyscale        |    222.48 us |   0.957 us |   0.747 us |     384 B |
+| DecodeIndexedImageMagick    | Greyscale        |    957.65 us |   1.680 us |   1.403 us |  206173 B |
+| DecodeIndexedStbImageSharp  | Greyscale        |    308.34 us |   5.011 us |   4.687 us |  202024 B |
+| DecodeIndexedImageSharp     | Greyscale        |    297.75 us |   3.058 us |   2.860 us |  204727 B |
+| DecodeIndexedImageSharpSpan | Greyscale        |    268.96 us |   1.151 us |   1.076 us |    3450 B |
+| DecodeIndexedGreenPng       | Indexed          |     34.15 us |   0.144 us |   0.134 us |   65944 B |
+| DecodeIndexedGreenPngSpan   | Indexed          |     33.87 us |   0.243 us |   0.227 us |     384 B |
+| DecodeIndexedImageMagick    | Indexed          |    359.34 us |   4.386 us |   3.888 us |   70108 B |
+| DecodeIndexedStbImageSharp  | Indexed          |     64.09 us |   0.242 us |   0.226 us |   69056 B |
+| DecodeIndexedImageSharp     | Indexed          |    117.65 us |   0.768 us |   0.718 us |   73781 B |
+| DecodeIndexedImageSharpSpan | Indexed          |    115.58 us |   0.299 us |   0.279 us |    8157 B |
+| DecodeIndexedGreenPng       | Indexed Alpha    |     34.27 us |   0.142 us |   0.133 us |   65944 B |
+| DecodeIndexedGreenPngSpan   | Indexed Alpha    |     33.58 us |   0.143 us |   0.134 us |     384 B |
+| DecodeIndexedImageMagick    | Indexed Alpha    |    591.47 us |   2.450 us |   2.292 us |   70114 B |
+| DecodeIndexedStbImageSharp  | Indexed Alpha    |     63.80 us |   0.389 us |   0.364 us |   69056 B |
+| DecodeIndexedImageSharp     | Indexed Alpha    |    226.89 us |   2.169 us |   2.029 us |   81824 B |
+| DecodeIndexedImageSharpSpan | Indexed Alpha    |    223.46 us |   1.607 us |   1.504 us |   16193 B |
+| DecodeIndexedGreenPng       | Indexed Filtered |     95.80 us |   0.924 us |   0.864 us |  181463 B |
+| DecodeIndexedGreenPngSpan   | Indexed Filtered |     84.88 us |   0.286 us |   0.267 us |     384 B |
+| DecodeIndexedImageMagick    | Indexed Filtered |    702.52 us |   3.853 us |   3.416 us |  185803 B |
+| DecodeIndexedStbImageSharp  | Indexed Filtered |    208.05 us |   1.393 us |   1.303 us |  182120 B |
+| DecodeIndexedImageSharp     | Indexed Filtered |    299.49 us |   2.447 us |   2.169 us |  189445 B |
+| DecodeIndexedImageSharpSpan | Indexed Filtered |    261.41 us |   1.175 us |   1.099 us |    8460 B |
+| DecodeIndexedGreenPng       | Truecolor        |  9,346.28 us |  78.269 us |  73.213 us | 4196174 B |
+| DecodeIndexedGreenPngSpan   | Truecolor        |  8,770.70 us |  37.547 us |  35.122 us |     384 B |
+| DecodeIndexedImageMagick    | Truecolor        | 25,301.67 us |  93.822 us |  87.761 us | 4200740 B |
+| DecodeIndexedStbImageSharp  | Truecolor        | 27,706.67 us |  97.151 us |  90.875 us | 6132054 B |
+| DecodeIndexedImageSharp     | Truecolor        | 13,909.29 us |  47.457 us |  44.391 us | 4202045 B |
+| DecodeIndexedImageSharpSpan | Truecolor        | 13,557.56 us |  95.467 us |  89.300 us |    6237 B |
+| DecodeIndexedGreenPng       | Truecolor Alpha  |  2,487.07 us |  26.182 us |  24.490 us | 4196139 B |
+| DecodeIndexedGreenPngSpan   | Truecolor Alpha  |  1,891.60 us |   7.963 us |   7.448 us |     624 B |
+| DecodeIndexedImageMagick    | Truecolor Alpha  | 20,119.79 us | 179.250 us | 167.670 us | 4200740 B |
+| DecodeIndexedStbImageSharp  | Truecolor Alpha  | 12,285.65 us |  58.317 us |  54.549 us | 4211060 B |
+| DecodeIndexedImageSharp     | Truecolor Alpha  |  2,590.54 us |  29.242 us |  27.353 us | 4200648 B |
+| DecodeIndexedImageSharpSpan | Truecolor Alpha  |  2,079.09 us |  13.602 us |  12.058 us |    4799 B |

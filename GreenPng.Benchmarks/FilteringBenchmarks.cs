@@ -1,11 +1,15 @@
+using System;
 using System.Security.Cryptography;
 using BenchmarkDotNet.Attributes;
 using GreenPng.Processing.Filters;
 
 namespace GreenPng.Benchmarks;
 
+[MemoryDiagnoser(false)]
 public class FilteringBenchmarks {
     byte[] prevScanline;
+
+    byte[] filteredScanline;
 
     byte[] scanline;
 
@@ -13,56 +17,78 @@ public class FilteringBenchmarks {
     public void Setup() {
         prevScanline = RandomNumberGenerator.GetBytes(1024 * 4);
 
+        filteredScanline = RandomNumberGenerator.GetBytes(1024 * 4);
+
         scanline = RandomNumberGenerator.GetBytes(1024 * 4);
     }
 
     [Benchmark]
     public void FilterSub() {
-        SubFiltering.Filter(scanline, 4);
+        SubFiltering.Filter(filteredScanline, scanline, 4);
     }
 
-    [Benchmark]
+    /*[Benchmark]
     public void FilterSubSse2() {
-        SubFiltering.FilterSse2(scanline);
+        SubFiltering.FilterSse2(filteredScanline, scanline);
     }
 
     [Benchmark]
     public void FilterSubScalar() {
-        SubFiltering.FilterScalar(scanline, 4);
+        SubFiltering.FilterScalar(filteredScanline, scanline, 4);
+    }*/
+
+    [Benchmark]
+    public void FilterSubMono() {
+        SubFiltering.Filter(filteredScanline.AsSpan(0, 1024), scanline.AsSpan(0, 1024), 1);
+    }
+
+    /*[Benchmark]
+    public void FilterUp() {
+        UpFiltering.Filter(prevScanline, filteredScanline, scanline);
     }
 
     [Benchmark]
-    public void FilterUp() {
-        UpFiltering.Filter(prevScanline, scanline);
+    public void FilterUpMono() {
+        UpFiltering.Filter(prevScanline.AsSpan(0, 1024), filteredScanline.AsSpan(0, 1024), scanline.AsSpan(0, 1024));
     }
 
     [Benchmark]
     public void FilterAverage() {
-        AverageFiltering.Filter(prevScanline, scanline, 4);
-    }
+        AverageFiltering.Filter(prevScanline, filteredScanline, scanline, 4);
+    }*/
 
-    [Benchmark]
+    /*[Benchmark]
     public void FilterAverageSse2() {
-        AverageFiltering.FilterSse2(prevScanline, scanline);
+        AverageFiltering.FilterSse2(prevScanline, filteredScanline, scanline);
     }
 
     [Benchmark]
     public void FilterAverageScalar() {
-        AverageFiltering.FilterScalar(prevScanline, scanline, 4);
-    }
+        AverageFiltering.FilterScalar(prevScanline, filteredScanline, scanline, 4);
+    }*/
+
+    /*[Benchmark]
+    public void FilterAverageMono() {
+        AverageFiltering.Filter(prevScanline.AsSpan(0, 1024), filteredScanline.AsSpan(0, 1024), scanline.AsSpan(0, 1024), 1);
+    }*/
 
     [Benchmark]
     public void FilterPaeth() {
-        PaethFiltering.Filter(prevScanline, scanline, 4);
+        PaethFiltering.Filter(prevScanline, filteredScanline, scanline, 4);
     }
 
-    [Benchmark]
+    /*[Benchmark]
     public void FilterPaethSsse3() {
-        PaethFiltering.FilterSsse3(prevScanline, scanline);
+        PaethFiltering.FilterSsse3(prevScanline, filteredScanline, scanline);
     }
 
     [Benchmark]
-    public void FilterScalar() {
-        PaethFiltering.FilterScalar(prevScanline, scanline, 4);
+    public void FilterPaethScalar() {
+        PaethFiltering.FilterScalar(prevScanline, filteredScanline, scanline, 4);
+    }*/
+
+    [Benchmark]
+    public void FilterPaethMono() {
+        PaethFiltering.Filter(prevScanline.AsSpan(0, 1024), filteredScanline.AsSpan(0, 1024), scanline.AsSpan(0, 1024), 1);
     }
 }

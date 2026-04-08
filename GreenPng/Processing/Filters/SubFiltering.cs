@@ -6,32 +6,36 @@ using System.Runtime.Intrinsics.X86;
 namespace GreenPng.Processing.Filters;
 
 public static class SubFiltering {
-    public static void Filter(Span<byte> scanline, int offset) {
+    public static void Filter(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline, int offset) {
         if(offset == 4 && Sse2.IsSupported) {
-            FilterSse2(scanline);
+            FilterSse2(filteredScanline, scanline);
 
             return;
         }
 
-        FilterScalar(scanline, offset);
+        FilterScalar(filteredScanline, scanline, offset);
     }
 
-    public static void FilterSse2(Span<byte> scanline) {
-        Span<int> scanlineInt32 = MemoryMarshal.Cast<byte, int>(scanline);
+    public static void FilterSse2(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline) {
+        ReadOnlySpan<uint> filteredScanline32 = MemoryMarshal.Cast<byte, uint>(filteredScanline);
+
+        Span<uint> scanline32 = MemoryMarshal.Cast<byte, uint>(scanline);
 
         Vector128<byte> subScanlineVector = default;
 
-        for(int i = 0; i < scanlineInt32.Length; i++) {
-            Vector128<byte> scanlineVector = Sse2.ConvertScalarToVector128Int32(scanlineInt32[i]).AsByte();
+        for(int i = 0; i < scanline32.Length; i++) {
+            Vector128<byte> scanlineVector = Sse2.ConvertScalarToVector128UInt32(filteredScanline32[i]).AsByte();
 
             subScanlineVector = Sse2.Add(scanlineVector, subScanlineVector);
 
-            scanlineInt32[i] = Sse2.ConvertToInt32(subScanlineVector.AsInt32());
+            scanline32[i] = Sse2.ConvertToUInt32(subScanlineVector.AsUInt32());
         }
     }
 
-    public static void FilterScalar(Span<byte> scanline, int offset) {
-        for(int i = 4; i < scanline.Length; i++)
-            scanline[i] += scanline[i - offset];
+    public static void FilterScalar(ReadOnlySpan<byte> filteredScanline, Span<byte> scanline, int offset) {
+        filteredScanline[..offset].CopyTo(scanline);
+
+        for(int i = offset; i < scanline.Length; i++)
+            scanline[i] = (byte)(filteredScanline[i] + scanline[i - offset]);
     }
 }
