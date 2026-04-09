@@ -2,7 +2,7 @@
 using GreenPng;
 using GreenPng.Testing;
 
-byte[] png = Resources.GreyscaleAlpha;
+byte[] png = Resources.Greyscale1Bit;
 
 PngDecoder.TryDecodeHeader(png, out PngHeader header);
 

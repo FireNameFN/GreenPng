@@ -11,12 +11,7 @@ public static class IndexedDecoder {
     public static void Decode(ReadOnlySpan<byte> palette, ReadOnlySpan<byte> transparency, ReadOnlySpan<byte> encodedScanline, Span<byte> scanline) {
         Span<byte> lookup = stackalloc byte[1024];
 
-        TruecolorUnpacker.Unpack(palette, lookup);
-
-        if(!transparency.IsEmpty)
-            DecodeTransparency(transparency, lookup);
-        else
-            TruecolorDecoder.Decode(lookup);
+        DecodeLookup(palette, transparency, lookup);
 
         if(Avx2.IsSupported) {
             DecodeAvx2(lookup, encodedScanline, scanline);
@@ -66,14 +61,25 @@ public static class IndexedDecoder {
         }
     }
 
-    static void DecodeTransparency(ReadOnlySpan<byte> transparency, Span<byte> lookup) {
+    static void DecodeLookup(ReadOnlySpan<byte> palette, ReadOnlySpan<byte> transparency, Span<byte> lookup) {
         if(Avx2.IsSupported) {
-            DecodeTransparencyAvx2(transparency, lookup);
+            TruecolorUnpacker.UnpackAvx2(palette, lookup);
 
-            return;
+            DecodeTransparencyAvx2(transparency, lookup);
+        } else {
+            TruecolorUnpacker.UnpackScalar(palette, lookup);
+
+            DecodeTransparencyScalar(transparency, lookup);
         }
 
-        DecodeTransparencyScalar(transparency, lookup);
+        int paletteLength = (palette.Length / 3) << 2;
+
+        int transparencyLength = transparency.Length << 2;
+
+        int length = paletteLength - transparencyLength;
+
+        if(length > 0)
+            TruecolorDecoder.Decode(lookup.Slice(transparencyLength, length));
     }
 
     static unsafe void DecodeTransparencyAvx2(ReadOnlySpan<byte> transparency, Span<byte> lookup) {

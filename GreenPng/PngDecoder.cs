@@ -5,6 +5,7 @@ using System.IO.Compression;
 using GreenBuf;
 using GreenPng.Processing;
 using GreenPng.Processing.Decoders;
+using GreenPng.Processing.Deserializers;
 using GreenPng.Processing.Filters;
 using GreenPng.Processing.Unpackers;
 
@@ -175,11 +176,11 @@ public static class PngDecoder {
             _ => 4
         };
 
-        int stride = header.Width * filterOffset;
+        int stride = (header.Width * filterOffset * header.BitDepth + 7) / 8;
 
         int imageOffset = (header.Width * 4 - stride) * header.Height;
 
-        Span<byte> encodedImage = image[imageOffset..];
+        Span<byte> scanlines = image[imageOffset..];
 
         Span<byte> prevScanline = stackalloc byte[stride];
 
@@ -192,7 +193,7 @@ public static class PngDecoder {
 
             Span<byte> filteredScanline = filteredScanlines.AsSpan(filteredOffset + 1, header.ScanlineLength);
 
-            Span<byte> scanline = encodedImage.Slice(stride * y, stride);
+            Span<byte> scanline = scanlines.Slice(stride * y, stride);
 
             bool unpacked = false;
 
@@ -239,15 +240,33 @@ public static class PngDecoder {
 
         ArrayPool<byte>.Shared.Return(filteredScanlines);
 
+        if(header.BitDepth != 8) {
+            imageOffset = header.Width * header.Height * (4 - filterOffset);
+
+            Span<byte> deserializedScanlines = image[imageOffset..];
+
+            switch(header.BitDepth) {
+                case 1:
+                    if(header.ImageType == ImageType.IndexedColor)
+                        Deserializer1Bit.Deserialize(scanlines, deserializedScanlines);
+                    else
+                        Deserializer1Bit.DeserializeScaled(scanlines, deserializedScanlines);
+
+                    break;
+            }
+
+            scanlines = deserializedScanlines;
+        }
+
         switch(header.ImageType) {
             case ImageType.Greyscale:
-                GreyscaleDecoder.Decode(encodedImage, image);
+                GreyscaleDecoder.Decode(scanlines, image);
                 break;
             case ImageType.Truecolor:
                 TruecolorDecoder.Decode(image);
                 break;
             case ImageType.IndexedColor:
-                IndexedDecoder.Decode(palette, transparency, encodedImage, image);
+                IndexedDecoder.Decode(palette, transparency, scanlines, image);
                 break;
             case ImageType.TruecolorAlpha:
                 TruecolorAlphaDecoder.Decode(image);
