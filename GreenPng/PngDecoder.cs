@@ -194,24 +194,31 @@ public static class PngDecoder {
 
             Span<byte> scanline = encodedImage.Slice(stride * y, stride);
 
+            bool unpacked = false;
+
             switch(header.ImageType) {
                 case ImageType.Truecolor:
                     TruecolorUnpacker.Unpack(filteredScanline, scanline);
 
-                    if(type == 0) {
-                        prevScanline = scanline;
+                    unpacked = true;
 
-                        continue;
-                    }
+                    break;
+                case ImageType.GreyscaleAlpha:
+                    GreyscaleAlphaUnpacker.Unpack(filteredScanline, scanline);
 
-                    filteredScanline = scanline;
+                    unpacked = true;
 
                     break;
             }
 
+            if(unpacked)
+                filteredScanline = scanline;
+
             switch(type) {
                 case 0:
-                    filteredScanline.CopyTo(scanline);
+                    if(!unpacked)
+                        filteredScanline.CopyTo(scanline);
+
                     break;
                 case 1:
                     SubFiltering.Filter(filteredScanline, scanline, filterOffset);

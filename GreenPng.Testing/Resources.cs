@@ -5,6 +5,8 @@ namespace GreenPng.Testing;
 public static class Resources {
     public static readonly byte[] Greyscale = GetResource("greyscale");
 
+    public static readonly byte[] GreyscaleAlpha = GetResource("greyscale_alpha");
+
     public static readonly byte[] Truecolor = GetResource("truecolor");
 
     public static readonly byte[] TruecolorAlpha = GetResource("truecolor_alpha");
