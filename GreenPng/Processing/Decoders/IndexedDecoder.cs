@@ -72,14 +72,9 @@ public static class IndexedDecoder {
             DecodeTransparencyScalar(transparency, lookup);
         }
 
-        int paletteLength = (palette.Length / 3) << 2;
-
         int transparencyLength = transparency.Length << 2;
 
-        int length = paletteLength - transparencyLength;
-
-        if(length > 0)
-            TruecolorDecoder.Decode(lookup.Slice(transparencyLength, length));
+        TruecolorDecoder.Decode(lookup[transparencyLength..]);
     }
 
     static unsafe void DecodeTransparencyAvx2(ReadOnlySpan<byte> transparency, Span<byte> lookup) {

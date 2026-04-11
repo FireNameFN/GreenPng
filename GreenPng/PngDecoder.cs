@@ -100,10 +100,16 @@ public static class PngDecoder {
             while(reader.TryGetChunk(out ChunkType type, out ReadOnlySpan<byte> chunk)) {
                 switch(type) {
                     case ChunkType.PLTE:
+                        if(palette.Length > 256)
+                            return false;
+
                         palette = chunk;
 
                         break;
                     case ChunkType.tRNS:
+                        if(transparency.Length > palette.Length)
+                            return false;
+
                         transparency = chunk;
 
                         break;
@@ -145,27 +151,9 @@ public static class PngDecoder {
     }
 
     static bool TryDecodeData(PngHeader header, ReadOnlySpan<byte> palette, ReadOnlySpan<byte> transparency, Stream data, Span<byte> image) {
-        int filteredLength = header.ScanlineLength + 1;
+        int packedStride = header.ScanlineLength + 1;
 
-        int filteredScanlinesLength = filteredLength * header.Height;
-
-        byte[] filteredScanlines = ArrayPool<byte>.Shared.Rent(filteredScanlinesLength);
-
-        using(ZLibStream stream = new(data, CompressionMode.Decompress)) {
-            int offset = 0;
-
-            while(offset < filteredScanlinesLength) {
-                int length = stream.Read(filteredScanlines.AsSpan(offset));
-
-                if(length == 0) {
-                    ArrayPool<byte>.Shared.Return(filteredScanlines);
-
-                    return false;
-                }
-
-                offset += length;
-            }
-        }
+        int packedScanlinesLength = packedStride * header.Height;
 
         int filterOffset = header.ImageType switch {
             ImageType.Greyscale => 1,
@@ -178,20 +166,55 @@ public static class PngDecoder {
 
         int stride = (header.Width * filterOffset * header.BitDepth + 7) / 8;
 
+        byte[] packedScanlines = ArrayPool<byte>.Shared.Rent(packedScanlinesLength + stride);
+
+        if(!TryDecompressImage(data, packedScanlines.AsSpan(0, packedScanlinesLength))) {
+            ArrayPool<byte>.Shared.Return(packedScanlines);
+
+            return false;
+        }
+
         int imageOffset = (header.Width * 4 - stride) * header.Height;
 
         Span<byte> scanlines = image[imageOffset..];
 
-        Span<byte> prevScanline = stackalloc byte[stride];
+        UnpackImage(header, packedScanlines, stride, packedStride, filterOffset, scanlines);
+
+        ArrayPool<byte>.Shared.Return(packedScanlines);
+
+        DecodeImage(header, palette, transparency, scanlines, filterOffset, image);
+
+        return true;
+    }
+
+    static bool TryDecompressImage(Stream data, Span<byte> packedScanlines) {
+        using ZLibStream stream = new(data, CompressionMode.Decompress);
+
+        int offset = 0;
+
+        while(offset < packedScanlines.Length) {
+            int length = stream.Read(packedScanlines[offset..]);
+
+            if(length == 0)
+                return false;
+
+            offset += length;
+        }
+
+        return true;
+    }
+
+    static void UnpackImage(PngHeader header, Span<byte> packedScanlines, int stride, int packedStride, int filterOffset, Span<byte> scanlines) {
+        Span<byte> prevScanline = packedScanlines[^stride..];
 
         prevScanline.Clear();
 
         for(int y = 0; y < header.Height; y++) {
-            int filteredOffset = filteredLength * y;
+            int packedOffset = packedStride * y;
 
-            byte type = filteredScanlines[filteredOffset];
+            byte type = packedScanlines[packedOffset];
 
-            Span<byte> filteredScanline = filteredScanlines.AsSpan(filteredOffset + 1, header.ScanlineLength);
+            ReadOnlySpan<byte> packedScanline = packedScanlines.Slice(packedOffset + 1, header.ScanlineLength);
 
             Span<byte> scanline = scanlines.Slice(stride * y, stride);
 
@@ -199,13 +222,13 @@ public static class PngDecoder {
 
             switch(header.ImageType) {
                 case ImageType.Truecolor:
-                    TruecolorUnpacker.Unpack(filteredScanline, scanline);
+                    TruecolorUnpacker.Unpack(packedScanline, scanline);
 
                     unpacked = true;
 
                     break;
                 case ImageType.GreyscaleAlpha:
-                    GreyscaleAlphaUnpacker.Unpack(filteredScanline, scanline);
+                    GreyscaleAlphaUnpacker.Unpack(packedScanline, scanline);
 
                     unpacked = true;
 
@@ -213,35 +236,35 @@ public static class PngDecoder {
             }
 
             if(unpacked)
-                filteredScanline = scanline;
+                packedScanline = scanline;
 
             switch(type) {
                 case 0:
                     if(!unpacked)
-                        filteredScanline.CopyTo(scanline);
+                        packedScanline.CopyTo(scanline);
 
                     break;
                 case 1:
-                    SubFiltering.Filter(filteredScanline, scanline, filterOffset);
+                    SubFiltering.Filter(packedScanline, scanline, filterOffset);
                     break;
                 case 2:
-                    UpFiltering.Filter(prevScanline, filteredScanline, scanline);
+                    UpFiltering.Filter(prevScanline, packedScanline, scanline);
                     break;
                 case 3:
-                    AverageFiltering.Filter(prevScanline, filteredScanline, scanline, filterOffset);
+                    AverageFiltering.Filter(prevScanline, packedScanline, scanline, filterOffset);
                     break;
                 case 4:
-                    PaethFiltering.Filter(prevScanline, filteredScanline, scanline, filterOffset);
+                    PaethFiltering.Filter(prevScanline, packedScanline, scanline, filterOffset);
                     break;
             }
 
             prevScanline = scanline;
         }
+    }
 
-        ArrayPool<byte>.Shared.Return(filteredScanlines);
-
+    static void DecodeImage(PngHeader header, ReadOnlySpan<byte> palette, ReadOnlySpan<byte> transparency, ReadOnlySpan<byte> scanlines, int filterOffset, Span<byte> image) {
         if(header.BitDepth != 8) {
-            imageOffset = header.Width * header.Height * (4 - filterOffset);
+            int imageOffset = header.Width * header.Height * (4 - filterOffset);
 
             Span<byte> deserializedScanlines = image[imageOffset..];
 
@@ -272,7 +295,5 @@ public static class PngDecoder {
                 TruecolorAlphaDecoder.Decode(image);
                 break;
         }
-
-        return true;
     }
 }
