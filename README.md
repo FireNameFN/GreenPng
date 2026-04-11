@@ -6,16 +6,16 @@ It is focused on decoding 8-bit-per-channel images to little-endian `BGRA` forma
 
 # Comparsion
 
-| Project | Speed | Memory efficiency | Correctness | Free license |
-|-|-|-|-|-|
-| **GreenPng** | :zap: | :green_circle: | :construction: WIP | :white_check_mark: |
-| StbImageSharp | :crescent_moon: | :yellow_circle: | :white_check_mark: | :white_check_mark: |
-| Magick.NET | :snowflake: | :yellow_circle: | :x: | :white_check_mark: |
-| SixLabors.ImageSharp | :fire: | :yellow_circle: | :white_check_mark: | :x: |
+| Project | Speed | Memory efficiency | Free license |
+|-|-|-|-|
+| **GreenPng** | :zap: | :green_circle: | :white_check_mark: |
+| StbImageSharp | :crescent_moon: | :yellow_circle:| :white_check_mark: |
+| Magick.NET | :snowflake: | :yellow_circle: | :white_check_mark: |
+| SixLabors.ImageSharp | :fire: | :white_check_mark: | :x: |
 
 # Format support
 
-| Type | 1 bit | 2, 4 bits | 8 bit | 16 bit |
+| Type | 1 bit | 2, 4 bit | 8 bit | 16 bit |
 |-|-|-|-|-|
 | Greyscale | :white_check_mark: | :construction: | :white_check_mark: | :x: |
 | Truecolor ||| :white_check_mark: | :x: |
@@ -44,3 +44,10 @@ byte[] image = new byte[header.ByteSize];
 
 success = PngDecoder.TryDecode(pngFileData, header, image);
 ```
+
+# Not supported
+
+- Interlacing
+- 16 bit
+- Unusual chunks
+- War
