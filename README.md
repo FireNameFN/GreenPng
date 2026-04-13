@@ -9,20 +9,20 @@ It is focused on decoding 8-bit-per-channel images to little-endian `BGRA` forma
 | Project | Speed | Memory efficiency | Free license |
 |-|-|-|-|
 | **GreenPng** | :zap: | :green_circle: | :white_check_mark: |
-| StbImageSharp | :crescent_moon: | :yellow_circle:| :white_check_mark: |
+| StbImageSharp | :bulb: | :yellow_circle:| :white_check_mark: |
 | Magick.NET | :snowflake: | :yellow_circle: | :white_check_mark: |
-| SixLabors.ImageSharp | :fire: | :white_check_mark: | :x: |
+| SixLabors.ImageSharp | :bulb: | :yellow_circle: | :x: |
 
 # Format support
 
-| Type | 1 bit | 2 bit | 4 bit | 8 bit | 16 bit |
-|-|-|-|-|-|-|
-| Greyscale | :white_check_mark: | :white_check_mark: | :construction: | :white_check_mark: | :x: |
-| Truecolor |||| :white_check_mark: | :x: |
-| Indexed | :white_check_mark: | :white_check_mark: | :construction: | :white_check_mark: | :x: |
-| Indexed (with transparency) | :white_check_mark: | :white_check_mark: | :construction: | :white_check_mark: | :x: |
-| Greyscale with alpha |||| :white_check_mark: | :x: |
-| Truecolor with alpha |||| :white_check_mark: | :x: |
+| Type | 1, 2, 4 bit | 8 bit | 16 bit |
+|-|-|-|-|
+| Greyscale | :white_check_mark: | :white_check_mark: | :x: |
+| Truecolor || :white_check_mark: | :x: |
+| Indexed | :white_check_mark: | :white_check_mark: | :x: |
+| Indexed (with transparency) | :white_check_mark: | :white_check_mark: | :x: |
+| Greyscale with alpha || :white_check_mark: | :x: |
+| Truecolor with alpha || :white_check_mark: | :x: |
 
 # How to use
 
