@@ -63,7 +63,7 @@ public static class PngDecoder {
             _ => 0
         };
 
-        int scanlineLength = (width * pixelBitLength + 7) / 8;
+        int scanlineLength = (width * pixelBitLength + 7) >> 3;
 
         int size = width * height * 4;
 
@@ -100,7 +100,7 @@ public static class PngDecoder {
             while(reader.TryGetChunk(out ChunkType type, out ReadOnlySpan<byte> chunk)) {
                 switch(type) {
                     case ChunkType.PLTE:
-                        if(palette.Length > 256)
+                        if(palette.Length > (1 << header.BitDepth))
                             return false;
 
                         palette = chunk;
@@ -164,7 +164,7 @@ public static class PngDecoder {
             _ => 4
         };
 
-        int stride = (header.Width * filterOffset * header.BitDepth + 7) / 8;
+        int stride = (header.Width * filterOffset * header.BitDepth + 7) >> 3;
 
         byte[] packedScanlines = ArrayPool<byte>.Shared.Rent(packedScanlinesLength + stride);
 
@@ -268,13 +268,18 @@ public static class PngDecoder {
 
             Span<byte> deserializedScanlines = image[imageOffset..];
 
-            switch(header.BitDepth) {
-                case 1:
-                    if(header.ImageType == ImageType.IndexedColor)
-                        Deserializer1Bit.Deserialize(scanlines, deserializedScanlines);
-                    else
-                        Deserializer1Bit.DeserializeScaled(scanlines, deserializedScanlines);
-
+            switch((header.ImageType, header.BitDepth)) {
+                case (ImageType.IndexedColor, 1):
+                    Deserializer1Bit.Deserialize(scanlines, deserializedScanlines);
+                    break;
+                case (ImageType.IndexedColor, 2):
+                    Deserializer2Bit.Deserialize(scanlines, deserializedScanlines);
+                    break;
+                case (ImageType.Greyscale, 1):
+                    Deserializer1Bit.DeserializeScaled(scanlines, deserializedScanlines);
+                    break;
+                case (ImageType.Greyscale, 2):
+                    Deserializer2Bit.DeserializeScaled(scanlines, deserializedScanlines);
                     break;
             }
 

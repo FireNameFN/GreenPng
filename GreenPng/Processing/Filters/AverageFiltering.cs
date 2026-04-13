@@ -42,9 +42,9 @@ public static class AverageFiltering {
 
     public static void FilterScalar(ReadOnlySpan<byte> prevScanline, ReadOnlySpan<byte> filteredScanline, Span<byte> scanline, int offset) {
         for(int i = 0; i < offset; i++)
-            scanline[i] = (byte)(filteredScanline[i] + prevScanline[i] / 2);
+            scanline[i] = (byte)(filteredScanline[i] + prevScanline[i] >> 1);
 
         for(int i = offset; i < scanline.Length; i++)
-            scanline[i] = (byte)(filteredScanline[i] + (scanline[i - offset] + prevScanline[i]) / 2);
+            scanline[i] = (byte)(filteredScanline[i] + (scanline[i - offset] + prevScanline[i]) >> 1);
     }
 }

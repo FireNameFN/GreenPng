@@ -27,9 +27,9 @@ public static class Deserializer1Bit {
         for(; i < serializedScanline.Length - 3; i += 4) {
             Vector256<byte> scanlineVector = Avx2.BroadcastScalarToVector256((uint*)(serializedScanlinePointer + i)).AsByte();
 
-            scanlineVector = Avx2.Shuffle(scanlineVector, Vectors256.ShuffleBits);
+            scanlineVector = Avx2.Shuffle(scanlineVector, Vectors256.Shuffle1Bit);
 
-            scanlineVector = Avx2.AndNot(scanlineVector, Vectors256.MaskBits);
+            scanlineVector = Avx2.AndNot(scanlineVector, Vectors256.Mask1Bit);
 
             scanlineVector = Avx2.CompareEqual(scanlineVector, default);
 
@@ -80,9 +80,9 @@ public static class Deserializer1Bit {
         for(; i < serializedScanline.Length - 3; i += 4) {
             Vector256<byte> scanlineVector = Avx2.BroadcastScalarToVector256((uint*)(serializedScanlinePointer + i)).AsByte();
 
-            scanlineVector = Avx2.Shuffle(scanlineVector, Vectors256.ShuffleBits);
+            scanlineVector = Avx2.Shuffle(scanlineVector, Vectors256.Shuffle1Bit);
 
-            scanlineVector = Avx2.AndNot(scanlineVector, Vectors256.MaskBits);
+            scanlineVector = Avx2.AndNot(scanlineVector, Vectors256.Mask1Bit);
 
             scanlineVector = Avx2.CompareEqual(scanlineVector, default);
 

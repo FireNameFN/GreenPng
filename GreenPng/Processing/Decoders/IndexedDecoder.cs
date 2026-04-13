@@ -72,7 +72,7 @@ public static class IndexedDecoder {
             DecodeTransparencyScalar(transparency, lookup);
         }
 
-        int transparencyLength = transparency.Length << 2;
+        int transparencyLength = transparency.Length * 4;
 
         TruecolorDecoder.Decode(lookup[transparencyLength..]);
     }

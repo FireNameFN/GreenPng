@@ -7,6 +7,8 @@ public static class TestImageDataSource {
 
     static readonly TestImage Greyscale1Bit = new("Greyscale 1 Bit", Resources.Greyscale1Bit);
 
+    static readonly TestImage Greyscale2Bit = new("Greyscale 2 Bit", Resources.Greyscale2Bit);
+
     static readonly TestImage Truecolor = new("Truecolor", Resources.Truecolor);
 
     static readonly TestImage TruecolorAlpha = new("Truecolor Alpha", Resources.TruecolorAlpha);
@@ -19,5 +21,7 @@ public static class TestImageDataSource {
 
     static readonly TestImage Indexed1Bit = new("Indexed 1 Bit", Resources.Indexed1Bit);
 
-    public static TestImage[] GetTestImages() => [Greyscale, GreyscaleAlpha, Greyscale1Bit, Truecolor, TruecolorAlpha, Indexed, IndexedFiltered, IndexedAlpha, Indexed1Bit];
+    static readonly TestImage Indexed2Bit = new("Indexed 2 Bit", Resources.Indexed2Bit);
+
+    public static TestImage[] GetTestImages() => [Greyscale, GreyscaleAlpha, Greyscale1Bit, Greyscale2Bit, Truecolor, TruecolorAlpha, Indexed, IndexedFiltered, IndexedAlpha, Indexed1Bit, Indexed2Bit];
 }
