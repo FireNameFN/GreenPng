@@ -6,7 +6,7 @@ using System.Runtime.Intrinsics.X86;
 
 namespace GreenPng.Processing.Deserializers;
 
-public static class Deserializer2Bit {
+public static class Deserializer4Bit {
     public static void Deserialize(ReadOnlySpan<byte> serializedScanline, Span<byte> scanline) {
         if(Avx2.IsSupported) {
             DeserializeAvx2(serializedScanline, scanline);
@@ -24,20 +24,16 @@ public static class Deserializer2Bit {
 
         int offset = 0;
 
-        for(; i < serializedScanline.Length - 7; i += 8) {
-            Vector256<byte> scanlineVector = Avx2.BroadcastScalarToVector256((ulong*)(serializedScanlinePointer + i)).AsByte();
+        for(; i < serializedScanline.Length - 15; i += 16) {
+            Vector256<byte> scanlineVector = Avx2.BroadcastVector128ToVector256(serializedScanlinePointer + i);
 
-            scanlineVector = Avx2.Shuffle(scanlineVector, Vectors256.Shuffle2Bit);
+            scanlineVector = Avx2.Shuffle(scanlineVector, Vectors256.Shuffle4Bit);
 
-            Vector256<byte> scanlineVectorLow = Avx2.AndNot(scanlineVector, Vectors256.Mask2BitLow);
+            Vector256<byte> scanlineVectorHigh = Avx2.ShiftRightLogical(scanlineVector.AsUInt32(), 4).AsByte();
 
-            Vector256<byte> scanlineVectorHigh = Avx2.AndNot(scanlineVector, Vectors256.Mask2BitHigh);
+            scanlineVector = Avx2.Xor(scanlineVector, Avx2.And(Vectors256.MaskHalf, Avx2.Xor(scanlineVector, scanlineVectorHigh)));
 
-            scanlineVectorLow = Avx2.And(Avx2.CompareEqual(scanlineVectorLow, default), Vectors256.MaskBit1);
-
-            scanlineVectorHigh = Avx2.And(Avx2.CompareEqual(scanlineVectorHigh, default), Vectors256.MaskBit2);
-
-            scanlineVector = Avx2.Or(scanlineVectorLow, scanlineVectorHigh);
+            scanlineVector = Avx2.And(scanlineVector, Vectors256.MaskHalfBit);
 
             scanlineVector.CopyTo(scanline[offset..]);
 
@@ -53,12 +49,10 @@ public static class Deserializer2Bit {
         for(int i = 0; i < serializedScanline.Length; i++) {
             int b = serializedScanline[i];
 
-            scanline[offset] = (byte)(b >> 6);
-            scanline[offset + 1] = (byte)(b >> 4 & 0b11);
-            scanline[offset + 2] = (byte)(b >> 2 & 0b11);
-            scanline[offset + 3] = (byte)(b & 0b11);
+            scanline[offset] = (byte)(b >> 4);
+            scanline[offset + 1] = (byte)(b & 0b1111);
 
-            offset += 4;
+            offset += 2;
         }
     }
 
@@ -79,20 +73,20 @@ public static class Deserializer2Bit {
 
         int offset = 0;
 
-        for(; i < serializedScanline.Length - 7; i += 8) {
-            Vector256<byte> scanlineVector = Avx2.BroadcastScalarToVector256((ulong*)(serializedScanlinePointer + i)).AsByte();
+        for(; i < serializedScanline.Length - 15; i += 16) {
+            Vector256<byte> scanlineVector = Avx2.BroadcastVector128ToVector256(serializedScanlinePointer + i);
 
-            scanlineVector = Avx2.Shuffle(scanlineVector, Vectors256.Shuffle2Bit);
+            scanlineVector = Avx2.Shuffle(scanlineVector, Vectors256.Shuffle4Bit);
 
-            Vector256<byte> scanlineVectorLow = Avx2.AndNot(scanlineVector, Vectors256.Mask2BitLow);
+            Vector256<byte> scanlineVectorLow = Avx2.ShiftLeftLogical(scanlineVector.AsUInt32(), 4).AsByte();
 
-            Vector256<byte> scanlineVectorHigh = Avx2.AndNot(scanlineVector, Vectors256.Mask2BitHigh);
+            Vector256<byte> scanlineVectorHigh = Avx2.ShiftRightLogical(scanlineVector.AsUInt32(), 4).AsByte();
 
-            scanlineVectorLow = Avx2.CompareEqual(scanlineVectorLow, default);
+            scanlineVector = Avx2.And(scanlineVector, Vectors256.Mask4Bit);
 
-            scanlineVectorHigh = Avx2.CompareEqual(scanlineVectorHigh, default);
+            scanlineVector = Avx2.Or(scanlineVector, Avx2.And(scanlineVectorLow, Vectors256.Mask4BitLow));
 
-            scanlineVector = Avx2.Xor(scanlineVectorLow, Avx2.And(Vectors256.MaskBit12, Avx2.Xor(scanlineVectorLow, scanlineVectorHigh)));
+            scanlineVector = Avx2.Or(scanlineVector, Avx2.And(scanlineVectorHigh, Vectors256.Mask4BitHigh));
 
             scanlineVector.CopyTo(scanline[offset..]);
 
@@ -108,12 +102,10 @@ public static class Deserializer2Bit {
         for(int i = 0; i < serializedScanline.Length; i++) {
             int b = serializedScanline[i];
 
-            scanline[offset] = (byte)((b >> 6) * 85);
-            scanline[offset + 1] = (byte)((b >> 4 & 0b11) * 85);
-            scanline[offset + 2] = (byte)((b >> 2 & 0b11) * 85);
-            scanline[offset + 3] = (byte)((b & 0b11) * 85);
+            scanline[offset] = (byte)(b >> 4 | b & 0b11110000);
+            scanline[offset + 1] = (byte)(b & 0b1111 | b << 4);
 
-            offset += 4;
+            offset += 2;
         }
     }
 }

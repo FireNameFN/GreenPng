@@ -13,15 +13,27 @@ public static class Vectors256 {
 
     public static readonly Vector256<byte> Shuffle2Bit = Vector256.Create((byte)0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 20, 20, 20, 20, 21, 21, 21, 21, 22, 22, 22, 22, 23, 23, 23, 23);
 
+    public static readonly Vector256<byte> Shuffle4Bit = Vector256.Create((byte)0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 24, 24, 25, 25, 26, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31, 31);
+
     public static readonly Vector256<byte> MaskMono = Vector256.Create(255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0);
 
     public static readonly Vector256<byte> MaskAlpha = Vector256.Create(0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255);
 
     public static readonly Vector256<byte> Mask1Bit = Vector256.Create(128, 64, 32, 16, 8, 4, 2, 1, 128, 64, 32, 16, 8, 4, 2, 1, 128, 64, 32, 16, 8, 4, 2, 1, 128, 64, 32, 16, 8, 4, 2, 1);
 
+    public static readonly Vector256<byte> Mask2BitLow = Vector256.Create((byte)64, 16, 4, 1, 64, 16, 4, 1, 64, 16, 4, 1, 64, 16, 4, 1, 64, 16, 4, 1, 64, 16, 4, 1, 64, 16, 4, 1, 64, 16, 4, 1);
+
     public static readonly Vector256<byte> Mask2BitHigh = Vector256.Create(128, 32, 8, 2, 128, 32, 8, 2, 128, 32, 8, 2, 128, 32, 8, 2, 128, 32, 8, 2, 128, 32, 8, 2, 128, 32, 8, 2, 128, 32, 8, 2);
 
-    public static readonly Vector256<byte> Mask2BitLow = Vector256.Create((byte)64, 16, 4, 1, 64, 16, 4, 1, 64, 16, 4, 1, 64, 16, 4, 1, 64, 16, 4, 1, 64, 16, 4, 1, 64, 16, 4, 1, 64, 16, 4, 1);
+    public static readonly Vector256<byte> Mask4Bit = Vector256.Create(0b11110000, 0b00001111, 0b11110000, 0b00001111, 0b11110000, 0b00001111, 0b11110000, 0b00001111, 0b11110000, 0b00001111, 0b11110000, 0b00001111, 0b11110000, 0b00001111, 0b11110000, 0b00001111, 0b11110000, 0b00001111, 0b11110000, 0b00001111, 0b11110000, 0b00001111, 0b11110000, 0b00001111, 0b11110000, 0b00001111, 0b11110000, 0b00001111, 0b11110000, 0b00001111, 0b11110000, 0b00001111);
+
+    public static readonly Vector256<byte> Mask4BitLow = Vector256.Create(0, 0b11110000, 0, 0b11110000, 0, 0b11110000, 0, 0b11110000, 0, 0b11110000, 0, 0b11110000, 0, 0b11110000, 0, 0b11110000, 0, 0b11110000, 0, 0b11110000, 0, 0b11110000, 0, 0b11110000, 0, 0b11110000, 0, 0b11110000, 0, 0b11110000, 0, 0b11110000);
+
+    public static readonly Vector256<byte> Mask4BitHigh = Vector256.Create((byte)0b00001111, 0, 0b00001111, 0, 0b00001111, 0, 0b00001111, 0, 0b00001111, 0, 0b00001111, 0, 0b00001111, 0, 0b00001111, 0, 0b00001111, 0, 0b00001111, 0, 0b00001111, 0, 0b00001111, 0, 0b00001111, 0, 0b00001111, 0, 0b00001111, 0, 0b00001111, 0);
+
+    public static readonly Vector256<byte> MaskHalf = Vector256.Create(255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0);
+
+    public static readonly Vector256<byte> MaskHalfBit = Vector256.Create((byte)0b00001111);
 
     public static readonly Vector256<byte> MaskBit12 = Vector256.Create((byte)0b10101010);
 

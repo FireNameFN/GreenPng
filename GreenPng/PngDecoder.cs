@@ -275,11 +275,17 @@ public static class PngDecoder {
                 case (ImageType.IndexedColor, 2):
                     Deserializer2Bit.Deserialize(scanlines, deserializedScanlines);
                     break;
+                case (ImageType.IndexedColor, 4):
+                    Deserializer4Bit.Deserialize(scanlines, deserializedScanlines);
+                    break;
                 case (ImageType.Greyscale, 1):
                     Deserializer1Bit.DeserializeScaled(scanlines, deserializedScanlines);
                     break;
                 case (ImageType.Greyscale, 2):
                     Deserializer2Bit.DeserializeScaled(scanlines, deserializedScanlines);
+                    break;
+                case (ImageType.Greyscale, 4):
+                    Deserializer4Bit.DeserializeScaled(scanlines, deserializedScanlines);
                     break;
             }
 

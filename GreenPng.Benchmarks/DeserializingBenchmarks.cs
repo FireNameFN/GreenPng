@@ -29,4 +29,14 @@ public class DeserializingBenchmarks {
     public void Deserialize2BitAvx2() {
         Deserializer2Bit.DeserializeAvx2(serializedScanline2Bit, scanline);
     }
+
+    [Benchmark]
+    public void Deserialize4BitAvx2() {
+        Deserializer4Bit.DeserializeAvx2(serializedScanline1Bit, scanline);
+    }
+
+    [Benchmark]
+    public void DeserializeScaled4BitAvx2() {
+        Deserializer4Bit.DeserializeScaledAvx2(serializedScanline2Bit, scanline);
+    }
 }
