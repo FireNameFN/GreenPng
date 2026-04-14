@@ -15,9 +15,5 @@ public readonly struct PngHeader {
 
     public byte InterlaceMethod { get; init; }
 
-    public int PixelBitLength { get; init; }
-
-    public int ScanlineLength { get; init; }
-
     public int ByteSize { get; init; }
 }

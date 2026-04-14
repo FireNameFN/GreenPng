@@ -54,17 +54,6 @@ public static class PngDecoder {
 
         byte interlaceMethod = reader.GetByte();
 
-        int pixelBitLength = imageType switch {
-            ImageType.Greyscale => bitDepth,
-            ImageType.Truecolor => bitDepth * 3,
-            ImageType.IndexedColor => bitDepth,
-            ImageType.GreyscaleAlpha => bitDepth * 2,
-            ImageType.TruecolorAlpha => bitDepth * 4,
-            _ => 0
-        };
-
-        int scanlineLength = (width * pixelBitLength + 7) >> 3;
-
         int size = width * height * 4;
 
         header = new() {
@@ -75,8 +64,6 @@ public static class PngDecoder {
             CompressionMethod = compressionMethod,
             FilterMethod = filterMethod,
             InterlaceMethod = interlaceMethod,
-            PixelBitLength = pixelBitLength,
-            ScanlineLength = scanlineLength,
             ByteSize = size
         };
 
@@ -151,20 +138,22 @@ public static class PngDecoder {
     }
 
     static bool TryDecodeData(PngHeader header, ReadOnlySpan<byte> palette, ReadOnlySpan<byte> transparency, Stream data, Span<byte> image) {
-        int packedStride = header.ScanlineLength + 1;
-
-        int packedScanlinesLength = packedStride * header.Height;
-
-        int filterOffset = header.ImageType switch {
-            ImageType.Greyscale => 1,
-            ImageType.Truecolor => 4,
-            ImageType.IndexedColor => 1,
-            ImageType.GreyscaleAlpha => 4,
-            ImageType.TruecolorAlpha => 4,
-            _ => 4
+        (int packedOffset, int filterOffset) = header.ImageType switch {
+            ImageType.Greyscale => (1, 1),
+            ImageType.Truecolor => (3, 4),
+            ImageType.IndexedColor => (1, 1),
+            ImageType.GreyscaleAlpha => (2, 4),
+            ImageType.TruecolorAlpha => (4, 4),
+            _ => (0, 0)
         };
 
         int stride = (header.Width * filterOffset * header.BitDepth + 7) >> 3;
+
+        int scanlineLength = (header.Width * packedOffset * header.BitDepth + 7) >> 3;
+
+        int packedStride = scanlineLength + 1;
+
+        int packedScanlinesLength = packedStride * header.Height;
 
         byte[] packedScanlines = ArrayPool<byte>.Shared.Rent(packedScanlinesLength + stride);
 
@@ -214,7 +203,7 @@ public static class PngDecoder {
 
             byte type = packedScanlines[packedOffset];
 
-            ReadOnlySpan<byte> packedScanline = packedScanlines.Slice(packedOffset + 1, header.ScanlineLength);
+            ReadOnlySpan<byte> packedScanline = packedScanlines.Slice(packedOffset + 1, packedStride - 1);
 
             Span<byte> scanline = scanlines.Slice(stride * y, stride);
 
