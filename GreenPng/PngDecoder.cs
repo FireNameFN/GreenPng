@@ -100,14 +100,14 @@ public static class PngDecoder {
             while(reader.TryGetChunk(out ChunkType type, out ReadOnlySpan<byte> chunk)) {
                 switch(type) {
                     case ChunkType.PLTE:
-                        if(palette.Length > (1 << header.BitDepth))
+                        if(chunk.Length > (1 << header.BitDepth) * 3)
                             return false;
 
                         palette = chunk;
 
                         break;
                     case ChunkType.tRNS:
-                        if(transparency.Length > palette.Length)
+                        if(chunk.Length * 3 > palette.Length)
                             return false;
 
                         transparency = chunk;
