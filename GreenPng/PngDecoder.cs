@@ -16,6 +16,31 @@ public static class PngDecoder {
 
     static readonly byte[] PngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
 
+    public static bool IsHeaderSupported(PngHeader header) {
+        if(header.Width < 1)
+            return false;
+
+        if(header.Height < 1)
+            return false;
+
+        if(header.BitDepth is not (1 or 2 or 4 or 8))
+            return false;
+
+        if(header.ImageType is not (ImageType.Greyscale or ImageType.Truecolor or ImageType.IndexedColor or ImageType.GreyscaleAlpha or ImageType.TruecolorAlpha))
+            return false;
+
+        if(header.CompressionMethod != 0)
+            return false;
+
+        if(header.FilterMethod != 0)
+            return false;
+
+        if(header.InterlaceMethod != 0)
+            return false;
+
+        return true;
+    }
+
     public static bool TryDecodeHeader(ReadOnlySpan<byte> png, out PngHeader header) {
         header = default;
 
@@ -129,6 +154,9 @@ public static class PngDecoder {
 
     public static byte[] Decode(ReadOnlySpan<byte> png, out PngHeader header) {
         header = DecodeHeader(png);
+
+        if(!IsHeaderSupported(header))
+            throw new InvalidOperationException("Header is not supported.");
 
         byte[] image = new byte[header.ByteSize];
 
