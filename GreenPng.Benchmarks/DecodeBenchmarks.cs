@@ -10,15 +10,11 @@ namespace GreenPng.Benchmarks;
 [MemoryDiagnoser(false)]
 public class DecodeBenchmarks {
     [ParamsSource(typeof(TestImageDataSource), nameof(TestImageDataSource.GetTestImages))]
-    public TestImage TestImage;
+    public TestImage TestImage = TestImageDataSource.TruecolorAlpha;
 
     [Benchmark]
     public byte[] DecodeGreenPng() {
-        PngDecoder.TryDecodeHeader(TestImage.Png, out PngHeader header);
-
-        byte[] image = new byte[header.ByteSize];
-
-        PngDecoder.TryDecode(TestImage.Png, header, image);
+        byte[] image = PngDecoder.Decode(TestImage.Png, out _);
 
         return image;
     }

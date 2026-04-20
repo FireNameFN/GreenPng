@@ -158,7 +158,7 @@ public static class PngDecoder {
         if(!IsHeaderSupported(header))
             throw new InvalidOperationException("Header is not supported.");
 
-        byte[] image = new byte[header.ByteSize];
+        byte[] image = GC.AllocateUninitializedArray<byte>(header.ByteSize);
 
         Decode(png, header, image);
 
