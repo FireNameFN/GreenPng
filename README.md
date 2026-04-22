@@ -38,11 +38,13 @@ int height = header.Height;
 ### More advanced way
 
 ```cs
-bool success = PngDecoder.TryDecodeHeader(pngFileData, out PngHeader header);
+bool ok = PngDecoder.TryDecodeHeader(pngFileData, out PngHeader header);
+
+ok = PngDecoder.IsHeaderSupported(header);
 
 byte[] image = new byte[header.ByteSize];
 
-success = PngDecoder.TryDecode(pngFileData, header, image);
+ok = PngDecoder.TryDecode(pngFileData, header, image);
 ```
 
 # Not supported

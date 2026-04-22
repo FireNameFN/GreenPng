@@ -1,6 +1,5 @@
 using System;
 using System.Buffers.Binary;
-using System.IO.Hashing;
 using GreenBuf;
 
 namespace GreenPng.Processing;
@@ -20,18 +19,11 @@ public static class SpanReaderExtensions {
             if(!reader.Check(length + 8))
                 return false;
 
-            ReadOnlySpan<byte> data = reader.Get(length + 4);
+            type = (ChunkType)reader.GetInt32();
 
-            uint hash = Crc32.HashToUInt32(data);
+            chunk = reader.Get(length);
 
-            uint hashRef = (uint)reader.GetInt32();
-
-            if(hash != hashRef)
-                return false;
-
-            type = (ChunkType)BinaryPrimitives.ReadInt32BigEndian(data[..4]);
-
-            chunk = data[4..];
+            reader.Advance(4);
 
             return true;
         }

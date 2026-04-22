@@ -7,10 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.IO.Hashing" Version="10.0.6" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\GreenBuf\GreenBuf.csproj" />
   </ItemGroup>
 
