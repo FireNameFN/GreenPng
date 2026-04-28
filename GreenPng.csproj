@@ -7,13 +7,13 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <Authors>FN</Authors>
     <Description>Fastest PNG decoder for .NET and C#</Description>
     <Copyright>Copyright (c) FN 2026</Copyright>
     <PackageProjectUrl>https://github.com/FireNameFN/GreenPng.Workspace</PackageProjectUrl>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <PackageTags>png image decode deserialize load</PackageTags>
+    <PackageTags>png image decode decoder load loader deserialize deserializer</PackageTags>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
