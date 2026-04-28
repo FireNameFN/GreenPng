@@ -6,6 +6,20 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <Version>1.0.1</Version>
+    <Authors>FN</Authors>
+    <Copyright>Copyright (c) FN 2026</Copyright>
+    <PackageProjectUrl>https://github.com/FireNameFN/GreenPng.Workspace</PackageProjectUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageTags>png image decode deserialize load</PackageTags>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="LICENSE.txt" Pack="true" PackagePath="" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\GreenBuf\GreenBuf.csproj" />
   </ItemGroup>
