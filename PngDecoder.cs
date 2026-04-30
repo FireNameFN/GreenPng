@@ -140,27 +140,36 @@ public static class PngDecoder {
         }
     }
 
-    public static PngHeader DecodeHeader(ReadOnlySpan<byte> png) {
-        if(!TryDecodeHeader(png, out PngHeader header))
-            throw new InvalidOperationException("Header decode error.");
+    public static bool TryDecode(ReadOnlySpan<byte> png, PngHeader header, out byte[] image) {
+        image = GC.AllocateUninitializedArray<byte>(header.ByteSize);
 
-        return header;
+        return TryDecode(png, header, image);
     }
 
-    public static void Decode(ReadOnlySpan<byte> png, PngHeader header, Span<byte> image) {
-        if(!TryDecode(png, header, image))
-            throw new InvalidOperationException("Image decode error.");
+    public static bool TryDecode(ReadOnlySpan<byte> png, out PngHeader header, out byte[] image) {
+        image = null;
+
+        if(!TryDecodeHeader(png, out header))
+            return false;
+
+        if(!IsHeaderSupported(header))
+            return false;
+
+        if(!TryDecode(png, header, out image))
+            return false;
+
+        return true;
     }
 
     public static byte[] Decode(ReadOnlySpan<byte> png, out PngHeader header) {
-        header = DecodeHeader(png);
+        if(!TryDecodeHeader(png, out header))
+            throw new InvalidOperationException("Header decode error.");
 
         if(!IsHeaderSupported(header))
             throw new InvalidOperationException("Header is not supported.");
 
-        byte[] image = GC.AllocateUninitializedArray<byte>(header.ByteSize);
-
-        Decode(png, header, image);
+        if(!TryDecode(png, header, out byte[] image))
+            throw new InvalidOperationException("Image decode error.");
 
         return image;
     }
