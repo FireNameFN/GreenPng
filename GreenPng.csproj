@@ -12,12 +12,14 @@
     <Description>Fastest PNG decoder for .NET and C#</Description>
     <Copyright>Copyright (c) FN 2026</Copyright>
     <PackageProjectUrl>https://github.com/FireNameFN/GreenPng.Workspace</PackageProjectUrl>
+    <PackageReadmeFile Condition="$(IncludeReadme)">README.md<PackageReadmeFile>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <PackageTags>png image decode decoder load loader deserialize deserializer</PackageTags>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="" Condition="$(IncludeReadme)" />
     <None Include="LICENSE.txt" Pack="true" PackagePath="" />
   </ItemGroup>
 
