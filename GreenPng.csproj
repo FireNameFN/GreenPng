@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GreenBuf\GreenBuf.csproj" />
+    <ProjectReference Include="..\GreenBuf\GreenBuf.csproj" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
