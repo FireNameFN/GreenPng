@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>2.1.0</Version>
+    <Version>2.2.0</Version>
     <Authors>FN</Authors>
     <Description>Fastest PNG decoder for .NET and C#</Description>
     <Copyright>Copyright (c) FN 2026</Copyright>
