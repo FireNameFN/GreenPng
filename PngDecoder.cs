@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using GreenBuf;
@@ -146,7 +147,7 @@ public static class PngDecoder {
         return TryDecode(png, header, image);
     }
 
-    public static bool TryDecode(ReadOnlySpan<byte> png, out PngHeader header, out byte[] image) {
+    public static bool TryDecode(ReadOnlySpan<byte> png, out PngHeader header, [NotNullWhen(true)] out byte[]? image) {
         image = null;
 
         if(!TryDecodeHeader(png, out header))
