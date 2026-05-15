@@ -1,7 +1,6 @@
 using System;
 using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.IO.Compression;
 using GreenBuf;
 using GreenPng.Processing;
@@ -11,6 +10,8 @@ using GreenPng.Processing.Filters;
 using GreenPng.Processing.Unpackers;
 
 namespace GreenPng;
+
+#if NET11_0
 
 public static class PngDecoder {
     const int HeaderLength = 33;
@@ -96,49 +97,35 @@ public static class PngDecoder {
         return true;
     }
 
-    public static unsafe bool TryDecode(ReadOnlySpan<byte> png, PngHeader header, Span<byte> image) {
-        png = png[HeaderLength..];
+    public static bool TryDecode(ReadOnlySpan<byte> png, PngHeader header, Span<byte> image) {
+        (int packedOffset, int filterOffset) = header.ImageType switch {
+            ImageType.Greyscale => (1, 1),
+            ImageType.Truecolor => (3, 4),
+            ImageType.IndexedColor => (1, 1),
+            ImageType.GreyscaleAlpha => (2, 4),
+            ImageType.TruecolorAlpha => (4, 4),
+            _ => (0, 0)
+        };
 
-        fixed(byte* buffer = png) {
-            SpanReader reader = new(png);
+        int stride = (header.Width * filterOffset * header.BitDepth + 7) >> 3;
 
-            SegmentStream data = new(buffer);
+        int scanlineLength = (header.Width * packedOffset * header.BitDepth + 7) >> 3;
 
-            int offset = 8;
+        int packedStride = scanlineLength + 1;
 
-            scoped ReadOnlySpan<byte> palette = default;
+        int packedScanlinesLength = packedStride * header.Height;
 
-            scoped ReadOnlySpan<byte> transparency = default;
+        ZLibDecoder decoder = new();
 
-            while(reader.TryGetChunk(out ChunkType type, out ReadOnlySpan<byte> chunk)) {
-                switch(type) {
-                    case ChunkType.PLTE:
-                        if(chunk.Length > (1 << header.BitDepth) * 3)
-                            return false;
+        byte[] packedScanlines = ArrayPool<byte>.Shared.Rent(packedScanlinesLength + stride);
 
-                        palette = chunk;
+        bool ok = TryDecodeData(png, header, decoder, packedScanlines, stride, packedStride, filterOffset, image);
 
-                        break;
-                    case ChunkType.tRNS:
-                        if(chunk.Length * 3 > palette.Length)
-                            return false;
+        ArrayPool<byte>.Shared.Return(packedScanlines);
 
-                        transparency = chunk;
+        decoder.Dispose();
 
-                        break;
-                    case ChunkType.IDAT:
-                        data.Add(offset, chunk.Length);
-
-                        break;
-                    case ChunkType.IEND:
-                        return TryDecodeData(header, palette, transparency, data, image);
-                }
-
-                offset += chunk.Length + 12;
-            }
-
-            return false;
-        }
+        return ok;
     }
 
     public static bool TryDecode(ReadOnlySpan<byte> png, PngHeader header, out byte[] image) {
@@ -175,32 +162,56 @@ public static class PngDecoder {
         return image;
     }
 
-    static bool TryDecodeData(PngHeader header, ReadOnlySpan<byte> palette, ReadOnlySpan<byte> transparency, Stream data, Span<byte> image) {
-        (int packedOffset, int filterOffset) = header.ImageType switch {
-            ImageType.Greyscale => (1, 1),
-            ImageType.Truecolor => (3, 4),
-            ImageType.IndexedColor => (1, 1),
-            ImageType.GreyscaleAlpha => (2, 4),
-            ImageType.TruecolorAlpha => (4, 4),
-            _ => (0, 0)
-        };
+    static bool TryDecodeData(ReadOnlySpan<byte> png, PngHeader header, ZLibDecoder decoder, Span<byte> packedScanlines, int stride, int packedStride, int filterOffset, Span<byte> image) {
+        SpanReader reader = new(png[HeaderLength..]);
 
-        int stride = (header.Width * filterOffset * header.BitDepth + 7) >> 3;
+        int offset = 0;
 
-        int scanlineLength = (header.Width * packedOffset * header.BitDepth + 7) >> 3;
+        OperationStatus status = OperationStatus.NeedMoreData;
 
-        int packedStride = scanlineLength + 1;
+        scoped ReadOnlySpan<byte> palette = default;
 
-        int packedScanlinesLength = packedStride * header.Height;
+        scoped ReadOnlySpan<byte> transparency = default;
 
-        byte[] packedScanlines = ArrayPool<byte>.Shared.Rent(packedScanlinesLength + stride);
+        while(reader.TryGetChunk(out ChunkType type, out ReadOnlySpan<byte> chunk)) {
+            switch(type) {
+                case ChunkType.PLTE:
+                    if(chunk.Length > (1 << header.BitDepth) * 3)
+                        return false;
 
-        if(!TryDecompressImage(data, packedScanlines.AsSpan(0, packedScanlinesLength))) {
-            ArrayPool<byte>.Shared.Return(packedScanlines);
+                    palette = chunk;
 
-            return false;
+                    break;
+                case ChunkType.tRNS:
+                    if(chunk.Length * 3 > palette.Length)
+                        return false;
+
+                    transparency = chunk;
+
+                    break;
+                case ChunkType.IDAT:
+                    if(status != OperationStatus.NeedMoreData)
+                        return false;
+
+                    status = decoder.Decompress(chunk, packedScanlines[offset..], out _, out int advance);
+
+                    offset += advance;
+
+                    break;
+                case ChunkType.IEND:
+                    if(status != OperationStatus.Done)
+                        return false;
+
+                    DecodeScanlines(header, palette, transparency, packedScanlines, stride, packedStride, filterOffset, image);
+
+                    return true;
+            }
         }
 
+        return false;
+    }
+
+    static void DecodeScanlines(PngHeader header, ReadOnlySpan<byte> palette, ReadOnlySpan<byte> transparency, Span<byte> packedScanlines, int stride, int packedStride, int filterOffset, Span<byte> image) {
         int imageOffset = (header.Width * 4 - stride) * header.Height;
 
         Span<byte> scanlines = image[imageOffset..];
@@ -215,34 +226,7 @@ public static class PngDecoder {
                 break;
         }
 
-        ArrayPool<byte>.Shared.Return(packedScanlines);
-
         DecodeImage(header, palette, transparency, scanlines, filterOffset, image);
-
-        return true;
-    }
-
-    static bool TryDecompressImage(Stream data, Span<byte> packedScanlines) {
-        using ZLibStream stream = new(data, CompressionMode.Decompress);
-
-        int offset = 0;
-
-        while(offset < packedScanlines.Length) {
-            int length;
-
-            try {
-                length = stream.Read(packedScanlines[offset..]);
-            } catch(InvalidDataException) {
-                return false;
-            }
-
-            if(length == 0)
-                return false;
-
-            offset += length;
-        }
-
-        return true;
     }
 
     static void FilterImage(PngHeader header, Span<byte> packedScanlines, int stride, int packedStride, int filterOffset, Span<byte> scanlines) {
@@ -369,3 +353,5 @@ public static class PngDecoder {
         }
     }
 }
+
+#endif
