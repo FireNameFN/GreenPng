@@ -141,10 +141,15 @@ public static class PngDecoder {
         }
     }
 
-    public static bool TryDecode(ReadOnlySpan<byte> png, PngHeader header, out byte[] image) {
+    public static bool TryDecode(ReadOnlySpan<byte> png, PngHeader header, [NotNullWhen(true)] out byte[]? image) {
         image = GC.AllocateUninitializedArray<byte>(header.ByteSize);
 
-        return TryDecode(png, header, image);
+        bool ok = TryDecode(png, header, image);
+
+        if(!ok)
+            image = null;
+
+        return ok;
     }
 
     public static bool TryDecode(ReadOnlySpan<byte> png, out PngHeader header, [NotNullWhen(true)] out byte[]? image) {
@@ -169,7 +174,7 @@ public static class PngDecoder {
         if(!IsHeaderSupported(header))
             throw new InvalidOperationException("Header is not supported.");
 
-        if(!TryDecode(png, header, out byte[] image))
+        if(!TryDecode(png, header, out byte[]? image))
             throw new InvalidOperationException("Image decode error.");
 
         return image;
