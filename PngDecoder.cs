@@ -196,9 +196,11 @@ public static class PngDecoder {
 
         int packedScanlinesLength = packedStride * header.Height;
 
+        int imageStride = header.Width * 4;
+
         int stride = header.ImageType switch {
-            ImageType.Truecolor => header.Width * 4,
-            ImageType.GreyscaleAlpha => header.Width * 4,
+            ImageType.Truecolor => imageStride,
+            ImageType.GreyscaleAlpha => imageStride,
             _ => scanlineLength
         };
 
@@ -210,7 +212,7 @@ public static class PngDecoder {
             return false;
         }
 
-        int imageOffset = (header.Width * 4 - stride) * header.Height;
+        int imageOffset = (imageStride - stride) * header.Height;
 
         Span<byte> scanlines = image[imageOffset..];
 
@@ -220,7 +222,7 @@ public static class PngDecoder {
                 UnpackFilterImage(header, packedScanlines, stride, packedStride, scanlines);
                 break;
             default:
-                FilterImage(header, packedScanlines, stride, packedStride, packedOffset, scanlines);
+                FilterImage(header, packedScanlines, stride, packedOffset, scanlines);
                 break;
         }
 
@@ -254,17 +256,17 @@ public static class PngDecoder {
         return true;
     }
 
-    static void FilterImage(PngHeader header, Span<byte> packedScanlines, int stride, int packedStride, int offset, Span<byte> scanlines) {
+    static void FilterImage(PngHeader header, Span<byte> packedScanlines, int stride, int packedOffset, Span<byte> scanlines) {
         Span<byte> prevScanline = packedScanlines[^stride..];
 
         prevScanline.Clear();
 
         for(int y = 0; y < header.Height; y++) {
-            int packedOffset = packedStride * y;
+            int offset = (stride + 1) * y;
 
-            byte type = packedScanlines[packedOffset];
+            byte type = packedScanlines[offset];
 
-            ReadOnlySpan<byte> packedScanline = packedScanlines.Slice(packedOffset + 1, packedStride - 1);
+            ReadOnlySpan<byte> packedScanline = packedScanlines.Slice(offset + 1, stride);
 
             Span<byte> scanline = scanlines.Slice(stride * y, stride);
 
@@ -273,16 +275,16 @@ public static class PngDecoder {
                     packedScanline.CopyTo(scanline);
                     break;
                 case 1:
-                    SubFiltering.Filter(packedScanline, scanline, offset);
+                    SubFiltering.Filter(packedScanline, scanline, packedOffset);
                     break;
                 case 2:
                     UpFiltering.Filter(prevScanline, packedScanline, scanline);
                     break;
                 case 3:
-                    AverageFiltering.Filter(prevScanline, packedScanline, scanline, offset);
+                    AverageFiltering.Filter(prevScanline, packedScanline, scanline, packedOffset);
                     break;
                 case 4:
-                    PaethFiltering.Filter(prevScanline, packedScanline, scanline, offset);
+                    PaethFiltering.Filter(prevScanline, packedScanline, scanline, packedOffset);
                     break;
             }
 
